@@ -1,7 +1,6 @@
-use gloo::utils::document;
+pub mod clipboard;
+
 use konnektoren_core::certificates::CertificateData;
-use wasm_bindgen::JsCast;
-use web_sys::{HtmlDocument, HtmlTextAreaElement};
 
 pub fn get_cefr_level_from_course(course_name: &str) -> u8 {
     if course_name.contains("A1") {
@@ -50,80 +49,6 @@ pub fn is_certificate_valid_for_zk_proof(cert: &CertificateData) -> bool {
         && cert.solved_challenges > 0
         && !cert.profile_name.is_empty()
         && !cert.game_path_name.is_empty()
-}
-
-/// Copy text to clipboard with fallback support
-pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
-    if let Some(window) = web_sys::window() {
-        // Try modern clipboard API first
-        let clipboard = window.navigator().clipboard();
-        let promise = clipboard.write_text(text);
-        match wasm_bindgen_futures::JsFuture::from(promise).await {
-            Ok(_) => return Ok(()),
-            Err(_) => {
-                // Fall through to legacy method
-            }
-        }
-    }
-
-    // Legacy fallback method
-    copy_to_clipboard_legacy(text)
-}
-
-/// Legacy clipboard copy using execCommand
-pub fn copy_to_clipboard_legacy(text: &str) -> Result<(), String> {
-    let document = document();
-
-    // Create temporary textarea
-    let textarea = document
-        .create_element("textarea")
-        .map_err(|_| "Failed to create textarea element")?;
-
-    let textarea: HtmlTextAreaElement = textarea
-        .dyn_into()
-        .map_err(|_| "Failed to cast to textarea")?;
-
-    // Set up textarea - style() returns CssStyleDeclaration directly, not a Result
-    textarea.set_value(text);
-    let style = textarea.style();
-    let _ = style.set_property("position", "fixed");
-    let _ = style.set_property("left", "-9999px");
-    let _ = style.set_property("top", "-9999px");
-    let _ = style.set_property("opacity", "0");
-
-    // Add to DOM
-    if let Some(body) = document.body() {
-        body.append_child(&textarea)
-            .map_err(|_| "Failed to append textarea to body")?;
-
-        // Select and copy
-        textarea.select();
-
-        // Set selection range
-        if textarea.set_selection_range(0, text.len() as u32).is_ok() {
-            // Try to get HtmlDocument for execCommand
-            if let Ok(html_doc) = document.dyn_into::<HtmlDocument>() {
-                let success = html_doc.exec_command("copy").unwrap_or(false);
-
-                // Clean up
-                let _ = body.remove_child(&textarea);
-
-                if success {
-                    Ok(())
-                } else {
-                    Err("Copy command returned false".to_string())
-                }
-            } else {
-                let _ = body.remove_child(&textarea);
-                Err("Could not access document.execCommand".to_string())
-            }
-        } else {
-            let _ = body.remove_child(&textarea);
-            Err("Could not select text".to_string())
-        }
-    } else {
-        Err("No document body found".to_string())
-    }
 }
 
 #[cfg(test)]
