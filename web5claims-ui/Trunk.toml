@@ -11,3 +11,14 @@ ignore = ["dist"]
 address = "127.0.0.1"
 port = 8080
 open = true
+
+# Add hooks to support SPA routing
+[[hooks]]
+stage = "post_build"
+command = "cp"
+command_arguments = ["./dist/index.html", "./dist/404.html"]
+
+[[hooks]]
+stage = "pre_build"
+command = "rm"
+command_arguments = ["-f", "./dist/404.html"]

@@ -53,6 +53,29 @@
 
         <!-- Trunk will inject the WASM and JS here -->
         <link data-trunk rel="rust" data-wasm-opt="s" />
+
+        <script>
+            // Check if we have a saved route from 404.html
+            (function () {
+                var redirectUrl = sessionStorage.getItem("spaRedirect");
+                if (redirectUrl) {
+                    // Clear the redirect data
+                    sessionStorage.removeItem("spaRedirect");
+
+                    // Only handle this if we're on the root path
+                    if (window.location.pathname === "/") {
+                        // Use history API to update the URL without reloading
+                        var url = new URL(redirectUrl, window.location.origin);
+                        window.history.replaceState(
+                            null,
+                            null,
+                            url.pathname + url.search + url.hash,
+                        );
+                        console.log("SPA route restored to:", redirectUrl);
+                    }
+                }
+            })();
+        </script>
     </head>
     <body>
         <div id="app">

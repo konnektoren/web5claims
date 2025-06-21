@@ -29,17 +29,15 @@ pub fn decode_proof_from_query() -> Result<Option<ZkProofClaim>, String> {
     let window = web_sys::window().ok_or("No window available")?;
     let location = window.location();
 
-    // Get the hash part of the URL (after #)
-    let hash = location.hash().map_err(|_| "Could not get hash")?;
-    log::info!("Hash: {}", hash);
+    // Get the search part of the URL (query parameters)
+    let search = location
+        .search()
+        .map_err(|_| "Could not get search parameters")?;
+    log::info!("Search params: {}", search);
 
-    // Parse the hash to extract query parameters
-    // Hash format: #/verify?proof=...
-    if let Some(query_start) = hash.find('?') {
-        let query_part = &hash[query_start + 1..];
-        log::info!("Query part: {}", query_part);
-
-        let url_params = web_sys::UrlSearchParams::new_with_str(query_part)
+    if !search.is_empty() {
+        // Parse the URL search parameters
+        let url_params = web_sys::UrlSearchParams::new_with_str(&search)
             .map_err(|_| "Failed to parse URL parameters")?;
 
         if let Some(encoded_proof) = url_params.get("proof") {
@@ -51,8 +49,34 @@ pub fn decode_proof_from_query() -> Result<Option<ZkProofClaim>, String> {
             Ok(None)
         }
     } else {
-        log::warn!("No query parameters found in hash");
-        Ok(None)
+        // Also check in the hash (for backward compatibility)
+        let hash = location.hash().map_err(|_| "Could not get hash")?;
+        log::info!("Hash: {}", hash);
+
+        // Parse the hash to extract query parameters
+        // Hash format: #/verify?proof=...
+        if let Some(query_start) = hash.find('?') {
+            let query_part = &hash[query_start + 1..];
+            log::info!("Query part from hash: {}", query_part);
+
+            let url_params = web_sys::UrlSearchParams::new_with_str(query_part)
+                .map_err(|_| "Failed to parse URL parameters")?;
+
+            if let Some(encoded_proof) = url_params.get("proof") {
+                log::info!(
+                    "Found proof parameter in hash, length: {}",
+                    encoded_proof.len()
+                );
+                let proof = decode_proof_from_url(&encoded_proof)?;
+                Ok(Some(proof))
+            } else {
+                log::warn!("No 'proof' parameter found in hash query");
+                Ok(None)
+            }
+        } else {
+            log::warn!("No query parameters found in URL");
+            Ok(None)
+        }
     }
 }
 
