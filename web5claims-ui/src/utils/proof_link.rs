@@ -17,7 +17,7 @@ pub fn generate_verify_link(proof: &ZkProofClaim) -> Result<String, String> {
     let origin = location.origin().map_err(|_| "Could not get origin")?;
 
     // Create verification URL with query parameter
-    let verify_url = format!("{}/#/verify?proof={}", origin, encoded);
+    let verify_url = format!("{}/verify?proof={}", origin, encoded);
 
     Ok(verify_url)
 }

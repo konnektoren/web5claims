@@ -17,6 +17,16 @@ fn switch(route: Route) -> Html {
     // Debug logging
     log::info!("Current route: {:?}", route);
 
+    // Log current URL for debugging
+    if let Some(window) = web_sys::window() {
+        if let Ok(href) = window.location().href() {
+            log::info!("Current URL: {}", href);
+        }
+        if let Ok(hash) = window.location().hash() {
+            log::info!("Current hash: {}", hash);
+        }
+    }
+
     // Update document title
     if let Some(document) = web_sys::window().and_then(|w| w.document()) {
         document.set_title(route.title());
@@ -51,12 +61,15 @@ fn switch(route: Route) -> Html {
         }
         Route::VerifyProof => {
             log::info!("Rendering VerifyProofPage");
+            log::info!("Verifier feature enabled: {}", cfg!(feature = "verifier"));
             #[cfg(feature = "verifier")]
             {
+                log::info!("About to render VerifyProofPage component");
                 html! { <VerifyProofPage /> }
             }
             #[cfg(not(feature = "verifier"))]
             {
+                log::warn!("Verifier feature not enabled, showing FeatureNotEnabled");
                 html! { <FeatureNotEnabled feature="verifier" /> }
             }
         }

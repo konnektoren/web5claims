@@ -12,6 +12,8 @@ use yew_router::prelude::*;
 
 #[function_component(VerifyProofPage)]
 pub fn verify_proof_page() -> Html {
+    log::info!("VerifyProofPage component is being rendered");
+
     let zk_service = use_state(|| ZkService::new());
     let proof = use_state(|| None::<ZkProofClaim>);
     let verification_result = use_state(|| None::<VerificationResult>);
@@ -25,17 +27,21 @@ pub fn verify_proof_page() -> Html {
         let error_message = error_message.clone();
 
         use_effect_with((), move |_| {
+            log::info!("Starting proof decoding from query parameters");
             match decode_proof_from_query() {
                 Ok(Some(decoded_proof)) => {
+                    log::info!("Successfully decoded proof from URL");
                     proof.set(Some(decoded_proof));
                 }
                 Ok(None) => {
+                    log::warn!("No proof data found in URL");
                     error_message.set(Some(
                         "No proof data found in URL. Please check the verification link."
                             .to_string(),
                     ));
                 }
                 Err(e) => {
+                    log::error!("Failed to decode proof: {}", e);
                     error_message.set(Some(format!("Failed to decode proof: {}", e)));
                 }
             }
@@ -95,6 +101,8 @@ pub fn verify_proof_page() -> Html {
             error_message.set(None);
         })
     };
+
+    log::info!("Rendering VerifyProofPage HTML");
 
     html! {
         <PageLayout>
