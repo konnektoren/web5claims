@@ -3,16 +3,96 @@
     <head>
         <meta charset="utf-8" />
         <title>Web5 Claims - ZK Language Learning Certificates</title>
+        <meta
+            name="description"
+            content="Zero-knowledge verifiable credential system for language learning achievements, built for ZK Hack Berlin"
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="author" content="Web5 Claims Team" />
+        <meta
+            name="keywords"
+            content="zero-knowledge, zk, language learning, certificates, blockchain, aleo"
+        />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta
+            property="og:title"
+            content="Web5 Claims - ZK Language Learning Certificates"
+        />
+        <meta
+            property="og:description"
+            content="Privacy-preserving certificate verification system for language learning achievements"
+        />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta
+            property="twitter:title"
+            content="Web5 Claims - ZK Language Learning Certificates"
+        />
+        <meta
+            property="twitter:description"
+            content="Privacy-preserving certificate verification system for language learning achievements"
+        />
+
+        <!-- Favicon -->
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>"
+        />
+
+        <!-- Styles -->
         <link
             href="https://cdn.jsdelivr.net/npm/daisyui@4.5.0/dist/full.min.css"
             rel="stylesheet"
             type="text/css"
         />
         <script src="https://cdn.tailwindcss.com"></script>
-        <link data-trunk rel="rust" data-wasm-opt="0" />
+
+        <!-- Trunk will inject the WASM and JS here -->
+        <link data-trunk rel="rust" data-wasm-opt="s" />
     </head>
     <body>
-        <div id="app"></div>
+        <div id="app">
+            <!-- Loading placeholder -->
+            <div
+                class="min-h-screen bg-base-200 flex items-center justify-center"
+            >
+                <div class="text-center">
+                    <div
+                        class="loading loading-spinner loading-lg text-primary mb-4"
+                    ></div>
+                    <p class="text-lg font-semibold">Loading Web5 Claims...</p>
+                    <p class="text-sm opacity-70">
+                        ZK Language Learning Certificates
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error fallback -->
+        <noscript>
+            <div
+                class="min-h-screen bg-base-200 flex items-center justify-center"
+            >
+                <div class="card bg-base-100 shadow-xl max-w-md">
+                    <div class="card-body text-center">
+                        <h2 class="card-title justify-center text-error">
+                            JavaScript Required
+                        </h2>
+                        <p>
+                            This application requires JavaScript to be enabled
+                            in your browser.
+                        </p>
+                        <p class="text-sm opacity-70">
+                            Web5 Claims uses WebAssembly for zero-knowledge
+                            proofs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </noscript>
     </body>
 </html>
