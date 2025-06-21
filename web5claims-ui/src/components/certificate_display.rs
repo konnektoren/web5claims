@@ -1,5 +1,6 @@
 use crate::components::certificate::{ErrorDisplay, ProofButtons, ProofDisplay};
 use crate::components::certificate_image::Web5CertificateImage;
+use crate::components::wallet::WalletInfo;
 use crate::services::ZkService;
 use crate::types::AppState;
 use crate::utils::clipboard::copy_to_clipboard_simple;
@@ -10,6 +11,8 @@ use yew::prelude::*;
 #[derive(Properties, PartialEq)]
 pub struct CertificateDisplayProps {
     pub state: UseStateHandle<AppState>,
+    #[prop_or_default]
+    pub wallet_info: Option<WalletInfo>,
 }
 
 #[function_component(CertificateDisplay)]
@@ -20,6 +23,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
     let generate_language_proof = {
         let state = props.state.clone();
         let zk_service = zk_service.clone();
+        let wallet_address = props.wallet_info.as_ref().map(|w| w.address.clone());
 
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
@@ -27,6 +31,12 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 new_state.is_generating_proof = true;
                 new_state.clear_error();
                 state.set(new_state);
+
+                if let Some(address) = &wallet_address {
+                    log::info!("Generating proof with wallet: {}", address);
+                } else {
+                    log::info!("Generating proof locally (no wallet)");
+                }
 
                 let language = cert
                     .game_path_name
@@ -60,7 +70,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                     cert.clone(),
                     language,
                     min_level,
-                    "aleo".to_string(),
+                    "local".to_string(), // Use "local" instead of "aleo"
                     on_success,
                     on_error,
                 );
@@ -71,6 +81,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
     let generate_performance_proof = {
         let state = props.state.clone();
         let zk_service = zk_service.clone();
+        let wallet_address = props.wallet_info.as_ref().map(|w| w.address.clone());
 
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
@@ -78,6 +89,12 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 new_state.is_generating_proof = true;
                 new_state.clear_error();
                 state.set(new_state);
+
+                if let Some(address) = &wallet_address {
+                    log::info!("Generating performance proof with wallet: {}", address);
+                } else {
+                    log::info!("Generating performance proof locally (no wallet)");
+                }
 
                 let on_success = {
                     let state = state.clone();
@@ -101,7 +118,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 zk_service.generate_performance_proof(
                     cert.clone(),
                     90,
-                    "aleo".to_string(),
+                    "local".to_string(), // Use "local" instead of "aleo"
                     on_success,
                     on_error,
                 );
@@ -112,6 +129,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
     let generate_combined_proof = {
         let state = props.state.clone();
         let zk_service = zk_service.clone();
+        let wallet_address = props.wallet_info.as_ref().map(|w| w.address.clone());
 
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
@@ -119,6 +137,12 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 new_state.is_generating_proof = true;
                 new_state.clear_error();
                 state.set(new_state);
+
+                if let Some(address) = &wallet_address {
+                    log::info!("Generating combined proof with wallet: {}", address);
+                } else {
+                    log::info!("Generating combined proof locally (no wallet)");
+                }
 
                 let language = cert
                     .game_path_name
@@ -159,7 +183,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 zk_service.generate_combined_proof(
                     cert.clone(),
                     criteria,
-                    "aleo".to_string(),
+                    "local".to_string(), // Use "local" instead of "aleo"
                     on_success,
                     on_error,
                 );
@@ -201,19 +225,18 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
             }
         })
     };
+
     let copy_proof_data = {
         let state = props.state.clone();
         let copy_status = copy_status.clone();
 
         Callback::from(move |_| {
             if let Some(proof) = &state.zk_proof {
-                // First try to generate a shareable link
                 match generate_verify_link(proof) {
                     Ok(link) => {
                         copy_to_clipboard_simple(&link, copy_status.clone());
                     }
                     Err(_) => {
-                        // Fall back to copying JSON
                         if let Ok(json) = serde_json::to_string_pretty(proof) {
                             copy_to_clipboard_simple(&json, copy_status.clone());
                         } else {
@@ -241,6 +264,20 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 on_dismiss={on_dismiss_error}
                 dismissible={true}
             />
+
+            // Wallet connection status (informational only)
+            if let Some(wallet) = &props.wallet_info {
+                <div class="alert alert-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <div class="font-semibold">{"Leo Wallet Connected"}</div>
+                        <div class="text-sm font-mono">{format!("{}...{}", &wallet.address[..8], &wallet.address[wallet.address.len()-8..])}</div>
+                        <div class="text-xs">{"Future on-chain functionality available"}</div>
+                    </div>
+                </div>
+            }
 
             if let Some(cert) = &props.state.certificate_data {
                 <CertificatePreview certificate={cert.clone()} />
@@ -287,7 +324,6 @@ pub fn certificate_preview(props: &CertificatePreviewProps) -> Html {
 
     html! {
         <div class="space-y-4">
-            // Copy Status Toast
             if let Some(status) = &*copy_status {
                 <div class="toast toast-top toast-center">
                     <div class={classes!(
@@ -299,7 +335,6 @@ pub fn certificate_preview(props: &CertificatePreviewProps) -> Html {
                 </div>
             }
 
-            // Certificate Image Display
             <div class="card bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200">
                 <div class="card-body p-6">
                     <h3 class="card-title text-xl mb-4 text-center">
@@ -310,7 +345,6 @@ pub fn certificate_preview(props: &CertificatePreviewProps) -> Html {
                         <Web5CertificateImage certificate_data={props.certificate.clone()} />
                     </div>
 
-                    // Certificate Actions
                     <div class="flex flex-wrap gap-2 justify-center">
                         <button
                             class="btn btn-outline btn-sm"
@@ -330,7 +364,6 @@ pub fn certificate_preview(props: &CertificatePreviewProps) -> Html {
                 </div>
             </div>
 
-            // Certificate Summary Stats
             <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
                 <div class="stat">
                     <div class="stat-figure text-secondary">{"🎯"}</div>

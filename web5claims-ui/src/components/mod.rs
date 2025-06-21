@@ -7,3 +7,4 @@ pub mod forms;
 pub mod header;
 pub mod layout;
 pub mod ui;
+pub mod wallet;
