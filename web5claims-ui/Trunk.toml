@@ -12,13 +12,11 @@ address = "127.0.0.1"
 port = 8080
 open = true
 
-# Add hooks to support SPA routing
+# Fix the hooks - remove the problematic pre_build hook and fix post_build
 [[hooks]]
 stage = "post_build"
-command = "cp"
-command_arguments = ["./dist/index.html", "./dist/404.html"]
-
-[[hooks]]
-stage = "pre_build"
-command = "rm"
-command_arguments = ["-f", "./dist/404.html"]
+command = "sh"
+command_arguments = [
+    "-c",
+    "if [ -f ./dist/index.html ]; then cp ./dist/index.html ./dist/404.html; fi",
+]
