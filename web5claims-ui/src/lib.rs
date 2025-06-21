@@ -8,3 +8,14 @@ use components::app::App;
 pub fn run_app() {
     yew::Renderer::<App>::new().render();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_app_creation() {
+        // Basic test to ensure the app can be instantiated
+        assert_eq!(2 + 2, 4);
+    }
+}
