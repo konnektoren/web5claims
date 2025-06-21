@@ -61,7 +61,12 @@ impl CertificateIssuer {
         Self {
             issuer_id,
             issuer_name,
-            supported_platforms: vec!["aleo".to_string(), "stylus".to_string(), "test".to_string()],
+            supported_platforms: vec![
+                "aleo".to_string(),
+                "stylus".to_string(),
+                "test".to_string(),
+                "web5claims_local".to_string(),
+            ],
         }
     }
 
