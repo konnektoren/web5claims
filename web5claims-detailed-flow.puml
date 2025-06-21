@@ -1,0 +1,193 @@
+@startuml web5claims-detailed-flow
+!theme cerulean-outline
+
+title Web5 Claims - Detailed ZK Language Learning Certificate Flow\n**ZK Hack Berlin 2024**
+
+actor "👨‍🎓\nLanguage Learner" as learner
+participant "🎮\nKonnektoren\nLearning Platform" as konnektoren
+participant "🌐\nWeb5 Claims UI\n(Yew Frontend)" as ui
+participant "🔐\nCertificate Issuer\n(Rust Backend)" as issuer
+participant "✅\nZK Proof Verifier\n(Rust Backend)" as verifier
+participant "⚙️\nAleo Platform\n(ZK Circuits)" as aleo
+participant "🏢\nEmployer/University\n(Relying Party)" as employer
+
+== 🎓 Learning & Certificate Generation ==
+learner -> konnektoren: Complete German B2 Course
+activate konnektoren
+
+konnektoren -> konnektoren: Generate CertificateData
+note right
+**Certificate Fields:**
+• game_path_name: "German_B2_Complete"
+• total_challenges: 50
+• solved_challenges: 47
+• performance_percentage: 94
+• profile_name: "Language Learner"
+• date: 2024-01-15T10:30:00Z
+• signature: Ed25519 signature
+end note
+
+konnektoren -> konnektoren: Sign Certificate with Ed25519
+konnektoren -> learner: Issue Signed Certificate
+deactivate konnektoren
+
+== 🌐 Web5 Claims UI Interaction ==
+learner -> ui: Open Web5 Claims App
+activate ui
+
+ui -> learner: Show Certificate Form
+learner -> ui: Input Certificate Data
+ui -> ui: Validate Form & Preview Performance
+
+learner -> ui: Click "🎓 Generate Certificate"
+ui -> ui: Create CertificateData Object
+ui -> learner: Display Certificate Image & Stats
+
+== 🔐 ZK Proof Generation ==
+learner -> ui: Click "🚀 Generate Aleo ZK Proof"
+ui -> issuer: Create ProofRequest
+activate issuer
+
+note over issuer
+**ProofRequest:**
+• certificate: CertificateData
+• claim_type: LanguageProficiency {
+    language: "German",
+    min_level: CefrLevel::B2
+  }
+• target_platform: "aleo"
+• options: ProofOptions::default()
+end note
+
+issuer -> issuer: Validate Certificate
+issuer -> issuer: Extract Language & CEFR Level
+issuer -> issuer: Check: cert_level >= min_level
+issuer -> issuer: Generate Certificate Hash
+
+issuer -> aleo: Generate ZK Proof
+activate aleo
+
+note over aleo
+**Aleo ZK Circuit: language_proficiency_v1**
+```
+transition verify_language_skill(
+    private cert_level: u8,       // 4 (B2)
+    private performance: u8,      // 94
+    private student_hash: field,  // SHA256(profile)
+    public min_level: u8,         // 4 (B2)
+    public language: field,       // hash("German")
+) -> bool {
+    return cert_level >= min_level;
+}
+```
+**Proves:** Has German B2+ without revealing exact level/score
+end note
+
+aleo -> aleo: Execute ZK Circuit
+aleo -> issuer: Return ZK Proof Bytes
+deactivate aleo
+
+issuer -> issuer: Create ZkProofClaim
+note right
+**ZkProofClaim:**
+• proof_id: UUID
+• claim_type: LanguageProficiency
+• public_inputs: {
+    "min_level": "B2",
+    "language": "German",
+    "verification_result": true,
+    "certificate_hash": "sha256..."
+  }
+• proof_data: {
+    "proof_bytes": [ZK proof],
+    "circuit_id": "language_proficiency_v1",
+    "vk_hash": "verification_key_hash"
+  }
+• metadata: {
+    "platform": "aleo",
+    "issuer_id": "web5_claims_issuer"
+  }
+end note
+
+issuer -> ui: Return ZkProofClaim
+deactivate issuer
+
+ui -> learner: ✅ "ZK Proof Generated Successfully!"
+deactivate ui
+
+== 💼 Employment Verification Scenario ==
+learner -> employer: "I have German B2+ proficiency"
+employer -> learner: "Please provide verifiable proof"
+
+learner -> employer: Submit ZK Proof (JSON/Base64)
+employer -> verifier: Verify ZK Proof
+activate verifier
+
+verifier -> verifier: Check Proof Integrity
+verifier -> verifier: Validate Platform Support
+verifier -> verifier: Verify Circuit Trust
+note right
+**Trusted Circuits:**
+• language_proficiency_v1 ✅
+• performance_threshold_v1 ✅
+• completion_date_v1 ✅
+• combined_criteria_v1 ✅
+end note
+
+verifier -> aleo: Verify Proof On-Chain
+activate aleo
+aleo -> aleo: Run Verification Algorithm
+aleo -> verifier: ✅ Proof Valid
+deactivate aleo
+
+verifier -> verifier: Create VerificationResult
+note right
+**VerificationResult:**
+• is_valid: true
+• requirements_met: true
+• details: {
+    "platform": "aleo",
+    "circuit_id": "language_proficiency_v1",
+    "verified_at": "2024-01-15T11:00:00Z",
+    "verified_inputs": {
+      "min_level": "B2",
+      "language": "German"
+    }
+  }
+• warnings: []
+end note
+
+verifier -> employer: Return VerificationResult
+deactivate verifier
+
+employer -> employer: Process Verification
+employer -> learner: ✅ "German B2+ Competency Verified!"
+
+== 📊 Privacy Comparison ==
+note over learner, employer
+**🔐 What was PROVEN (Public):**
+✅ Has German language certification
+✅ Achieved B2 level or higher
+✅ Certificate issued after Jan 2023
+✅ Valid cryptographic signature
+
+**❌ What was HIDDEN (Private):**
+❌ Exact CEFR level (could be B2, C1, or C2)
+❌ Exact performance score (94%)
+❌ Number of challenges completed (47/50)
+❌ Student's real name
+❌ Exact completion date
+❌ Institution details
+end note
+
+== 🏆 ZK Hack Berlin Prize Tracks ==
+note over ui, aleo
+**🏆 Prize Track Alignment:**
+🥇 **Aleo ($5K)**: Native Aleo ZK circuits for education
+🏗️ **Arbitrum Stylus ($1K)**: Rust ZK verifier deployment
+🔐 **ZKPassport ($1K)**: Private identity verification
+👥 **Xion ($3K)**: Consumer-friendly ZK UX
+🏆 **Main Prize ($9K)**: Novel ZK education application
+end note
+
+@enduml
