@@ -3,4 +3,11 @@ name = "web5claims"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = [".", "web5claims-ui"]
+
 [dependencies]
+konnektoren-core = { git = "https://github.com/konnektoren/konnektoren-rs.git", features = [
+    "certificates",
+] }
+chrono = { version = "0.4", features = ["serde"] }
