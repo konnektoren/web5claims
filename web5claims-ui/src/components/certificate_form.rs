@@ -76,7 +76,7 @@ pub fn certificate_form(props: &CertificateFormProps) -> Html {
                 Utc::now(),
             );
 
-            new_state.certificate_data = Some(certificate_data);
+            new_state.set_certificate(certificate_data);
             state.set(new_state);
             is_loading.set(false);
         })

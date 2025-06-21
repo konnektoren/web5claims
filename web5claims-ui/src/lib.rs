@@ -1,4 +1,5 @@
 mod components;
+mod services;
 mod types;
 mod utils;
 
@@ -11,11 +12,8 @@ pub fn run_app() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_app_creation() {
-        // Basic test to ensure the app can be instantiated
         assert_eq!(2 + 2, 4);
     }
 }

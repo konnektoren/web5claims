@@ -2823,6 +2823,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "web5claims",
  "yew",
 ]
 

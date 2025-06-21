@@ -1,5 +1,7 @@
 use crate::components::certificate_image::Web5CertificateImage;
+use crate::services::ZkService;
 use crate::types::AppState;
+use web5claims::{CefrLevel, ClaimType};
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -9,43 +11,201 @@ pub struct CertificateDisplayProps {
 
 #[function_component(CertificateDisplay)]
 pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
-    let generate_zk_proof = {
-        let _state = props.state.clone();
+    let zk_service = use_state(|| ZkService::new());
+
+    let generate_language_proof = {
+        let state = props.state.clone();
+        let zk_service = zk_service.clone();
+
         Callback::from(move |_| {
-            // TODO: Implement ZK proof generation with Aleo
-            gloo::console::log!("Generating ZK proof...");
+            if let Some(cert) = &state.certificate_data {
+                let mut new_state = (*state).clone();
+                new_state.is_generating_proof = true;
+                new_state.clear_error();
+                state.set(new_state);
+
+                // Extract language from certificate
+                let language = cert
+                    .game_path_name
+                    .split('_')
+                    .next()
+                    .unwrap_or("German")
+                    .to_string();
+                let min_level =
+                    CefrLevel::from_course_name(&cert.game_path_name).unwrap_or(CefrLevel::B2);
+
+                let on_success = {
+                    let state = state.clone();
+                    Callback::from(move |proof| {
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_zk_proof(proof);
+                        state.set(new_state);
+                    })
+                };
+
+                let on_error = {
+                    let state = state.clone();
+                    Callback::from(move |error: String| {
+                        let mut new_state = (*state).clone();
+                        new_state.set_error(error);
+                        state.set(new_state);
+                    })
+                };
+
+                zk_service.generate_language_proficiency_proof(
+                    cert.clone(),
+                    language,
+                    min_level,
+                    "aleo".to_string(),
+                    on_success,
+                    on_error,
+                );
+            }
         })
     };
 
-    let copy_certificate_data = {
+    let generate_performance_proof = {
         let state = props.state.clone();
+        let zk_service = zk_service.clone();
+
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
-                let cert_data = cert.to_base64();
+                let mut new_state = (*state).clone();
+                new_state.is_generating_proof = true;
+                new_state.clear_error();
+                state.set(new_state);
 
-                // Use gloo for clipboard access (more reliable in WASM)
-                #[cfg(feature = "clipboard")]
-                {
-                    use gloo::utils::document;
-                    use web_sys::HtmlInputElement;
+                let on_success = {
+                    let state = state.clone();
+                    Callback::from(move |proof| {
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_zk_proof(proof);
+                        state.set(new_state);
+                    })
+                };
 
-                    // Create a temporary input element to copy text
-                    if let Some(document) = document().dyn_into::<web_sys::HtmlDocument>().ok() {
-                        if let Ok(input) = document.create_element("input") {
-                            let input: HtmlInputElement = input.dyn_into().unwrap();
-                            input.set_value(&cert_data);
-                            document.body().unwrap().append_child(&input).unwrap();
-                            input.select();
-                            let _ = document.exec_command("copy");
-                            document.body().unwrap().remove_child(&input).unwrap();
-                            gloo::console::log!("Certificate data copied to clipboard");
-                        }
-                    }
-                }
+                let on_error = {
+                    let state = state.clone();
+                    Callback::from(move |error: String| {
+                        let mut new_state = (*state).clone();
+                        new_state.set_error(error);
+                        state.set(new_state);
+                    })
+                };
 
-                #[cfg(not(feature = "clipboard"))]
-                {
-                    gloo::console::log!("Certificate data (copy manually):", &cert_data);
+                zk_service.generate_performance_proof(
+                    cert.clone(),
+                    90, // 90% threshold
+                    "aleo".to_string(),
+                    on_success,
+                    on_error,
+                );
+            }
+        })
+    };
+
+    let generate_combined_proof = {
+        let state = props.state.clone();
+        let zk_service = zk_service.clone();
+
+        Callback::from(move |_| {
+            if let Some(cert) = &state.certificate_data {
+                let mut new_state = (*state).clone();
+                new_state.is_generating_proof = true;
+                new_state.clear_error();
+                state.set(new_state);
+
+                let language = cert
+                    .game_path_name
+                    .split('_')
+                    .next()
+                    .unwrap_or("German")
+                    .to_string();
+                let min_level =
+                    CefrLevel::from_course_name(&cert.game_path_name).unwrap_or(CefrLevel::B2);
+
+                let criteria = vec![
+                    ClaimType::LanguageProficiency {
+                        language,
+                        min_level,
+                    },
+                    ClaimType::PerformanceThreshold { min_percentage: 90 },
+                ];
+
+                let on_success = {
+                    let state = state.clone();
+                    Callback::from(move |proof| {
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_zk_proof(proof);
+                        state.set(new_state);
+                    })
+                };
+
+                let on_error = {
+                    let state = state.clone();
+                    Callback::from(move |error: String| {
+                        let mut new_state = (*state).clone();
+                        new_state.set_error(error);
+                        state.set(new_state);
+                    })
+                };
+
+                zk_service.generate_combined_proof(
+                    cert.clone(),
+                    criteria,
+                    "aleo".to_string(),
+                    on_success,
+                    on_error,
+                );
+            }
+        })
+    };
+
+    let verify_proof = {
+        let state = props.state.clone();
+        let zk_service = zk_service.clone();
+
+        Callback::from(move |_| {
+            if let Some(proof) = &state.zk_proof {
+                let mut new_state = (*state).clone();
+                new_state.is_verifying_proof = true;
+                new_state.clear_error();
+                state.set(new_state);
+
+                let on_success = {
+                    let state = state.clone();
+                    Callback::from(move |result| {
+                        let mut new_state = (*state).clone();
+                        new_state.is_verifying_proof = false;
+                        new_state.set_verification_result(result);
+                        state.set(new_state);
+                    })
+                };
+
+                let on_error = {
+                    let state = state.clone();
+                    Callback::from(move |error: String| {
+                        let mut new_state = (*state).clone();
+                        new_state.set_error(error);
+                        state.set(new_state);
+                    })
+                };
+
+                zk_service.verify_proof(proof.clone(), on_success, on_error);
+            }
+        })
+    };
+
+    let copy_proof_data = {
+        let state = props.state.clone();
+        Callback::from(move |_| {
+            if let Some(proof) = &state.zk_proof {
+                if let Ok(json) = serde_json::to_string_pretty(proof) {
+                    // Copy to clipboard logic here
+                    gloo::console::log!("ZK Proof JSON:", &json);
                 }
             }
         })
@@ -58,6 +218,18 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
             html! {
                             <div class="space-y-6">
+                                // Error Display
+                                if let Some(error) = &props.state.error_message {
+                                    <div class="alert alert-error shadow-lg">
+                                        <div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span>{error}</span>
+                                        </div>
+                                    </div>
+                                }
+
                                 // Certificate Image Display
                                 <div class="card bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200">
                                     <div class="card-body p-6">
@@ -68,33 +240,13 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                                         <div class="flex justify-center mb-4">
                                             <Web5CertificateImage certificate_data={cert.clone()} />
                                         </div>
-
-                                        // Certificate Actions
-                                        <div class="flex flex-wrap gap-2 justify-center">
-                                            <button
-                                                class="btn btn-outline btn-sm"
-                                                onclick={copy_certificate_data}
-                                                title="Copy certificate data"
-                                            >
-                                                {"📋 Copy Data"}
-                                            </button>
-                                            <a
-                                                class="btn btn-outline btn-sm"
-                                                href={format!("data:text/plain;charset=utf-8,{}", cert.to_base64())}
-                                                download="certificate.txt"
-                                            >
-                                                {"💾 Download"}
-                                            </a>
-                                        </div>
                                     </div>
                                 </div>
 
                                 // Certificate Summary Stats
                                 <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
                                     <div class="stat">
-                                        <div class="stat-figure text-secondary">
-                                            {"🎯"}
-                                        </div>
+                                        <div class="stat-figure text-secondary">{"🎯"}</div>
                                         <div class="stat-title">{"Performance"}</div>
                                         <div class="stat-value text-primary">{cert.performance_percentage}{"%"}</div>
                                         <div class="stat-desc">
@@ -103,9 +255,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                                     </div>
 
                                     <div class="stat">
-                                        <div class="stat-figure text-secondary">
-                                            {"🌍"}
-                                        </div>
+                                        <div class="stat-figure text-secondary">{"🌍"}</div>
                                         <div class="stat-title">{"Course"}</div>
                                         <div class="stat-value text-secondary text-lg">
                                             {cert.game_path_name.replace("_", " ")}
@@ -114,79 +264,164 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                                     </div>
 
                                     <div class="stat">
-                                        <div class="stat-figure text-secondary">
-                                            {"👤"}
-                                        </div>
+                                        <div class="stat-figure text-secondary">{"👤"}</div>
                                         <div class="stat-title">{"Student"}</div>
                                         <div class="stat-value text-accent text-lg">{&cert.profile_name}</div>
                                         <div class="stat-desc">{"Verified learner"}</div>
                                     </div>
                                 </div>
 
-                                // ZK Proof Section
+                                // ZK Proof Generation Section
                                 <div class="card bg-gradient-to-r from-primary to-secondary text-primary-content">
                                     <div class="card-body">
                                         <h3 class="card-title text-xl mb-3">
                                             {"🔐 Zero-Knowledge Proof Generation"}
                                         </h3>
                                         <p class="text-sm opacity-90 mb-4">
-                                            {"Generate a ZK proof to verify your language skills without revealing exact scores or personal information."}
+                                            {"Generate cryptographic proofs to verify your skills without revealing private data."}
                                         </p>
 
-                                        // Proof Claims Preview
-                                        <div class="bg-base-100 bg-opacity-20 rounded-lg p-4 mb-4">
-                                            <h4 class="font-semibold mb-2">{"🔍 Proof Claims:"}</h4>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="badge badge-success badge-sm">{"Public"}</span>
-                                                    <span>{"Level ≥ B2"}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="badge badge-success badge-sm">{"Public"}</span>
-                                                    <span>{"Score ≥ 90%"}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="badge badge-error badge-sm">{"Private"}</span>
-                                                    <span>{"Exact score"}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="badge badge-error badge-sm">{"Private"}</span>
-                                                    <span>{"Student identity"}</span>
+                                        // Proof Type Selection
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                                            <button
+                                                class={classes!(
+                                                    "btn", "btn-accent",
+                                                    if props.state.is_generating_proof { "loading" } else { "" }
+                                                )}
+                                                onclick={generate_language_proof}
+                                                disabled={props.state.is_generating_proof}
+                                            >
+                                                {"🌍 Language Proof"}
+                                            </button>
+                                            <button
+                                                class={classes!(
+                                                    "btn", "btn-accent",
+                                                    if props.state.is_generating_proof { "loading" } else { "" }
+                                                )}
+                                                onclick={generate_performance_proof}
+                                                disabled={props.state.is_generating_proof}
+                                            >
+                                                {"📊 Performance Proof"}
+                                            </button>
+                                            <button
+                                                class={classes!(
+                                                    "btn", "btn-accent",
+                                                    if props.state.is_generating_proof { "loading" } else { "" }
+                                                )}
+                                                onclick={generate_combined_proof}
+                                                disabled={props.state.is_generating_proof}
+                                            >
+                                                {"🔗 Combined Proof"}
+                                            </button>
+                                        </div>
+
+                                        if props.state.is_generating_proof {
+                                            <div class="bg-base-100 bg-opacity-20 rounded-lg p-4 mb-4">
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <span class="loading loading-spinner loading-sm"></span>
+                                                    <span>{"Generating ZK proof with Aleo circuits..."}</span>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        // ZK Proof Actions
-                                        <div class="flex flex-col sm:flex-row gap-3">
-                                            <button
-                                                class="btn btn-accent flex-1"
-                                                onclick={generate_zk_proof}
-                                            >
-                                                {"🚀 Generate Aleo ZK Proof"}
-                                            </button>
-                                            <button
-                                                class="btn btn-outline btn-accent"
-                                                disabled={true}
-                                            >
-                                                {"⚡ Stylus Verifier"}
-                                            </button>
-                                        </div>
-
-                                        <div class="text-xs opacity-75 mt-2">
-                                            {"🏆 Building for ZK Hack Berlin - Aleo, Arbitrum Stylus, ZKPassport & Xion tracks"}
-                                        </div>
+                                        }
                                     </div>
                                 </div>
+
+                                // ZK Proof Display Section
+                                if let Some(proof) = &props.state.zk_proof {
+                                    <div class="card bg-success text-success-content">
+                                        <div class="card-body">
+                                            <h3 class="card-title">{"✅ ZK Proof Generated!"}</h3>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                <div>
+                                                    <p class="text-sm opacity-90 mb-2">{"Proof Details:"}</p>
+                                                    <ul class="text-xs space-y-1">
+                                                        <li>{"• Proof ID: "}{&proof.proof_id[..8]}{"..."}</li>
+                                                        <li>{"• Circuit: "}{&proof.proof_data.circuit_id}</li>
+                                                        <li>{"• Platform: "}{&proof.metadata.platform}</li>
+                                                        <li>{"• Valid: "}{if proof.public_inputs.verification_result { "✅" } else { "❌" }}</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm opacity-90 mb-2">{"Public Claims:"}</p>
+                                                    <ul class="text-xs space-y-1">
+                                                        {for proof.public_inputs.requirements.iter().map(|(key, value)| {
+                                                            html! {
+                                                                <li>{"• "}{key}{": "}{value}</li>
+                                                            }
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex gap-2">
+                                                <button
+                                                    class={classes!(
+                                                        "btn", "btn-outline", "btn-sm",
+                                                        if props.state.is_verifying_proof { "loading" } else { "" }
+                                                    )}
+                                                    onclick={verify_proof}
+                                                    disabled={props.state.is_verifying_proof}
+                                                >
+                                                    {"🔍 Verify Proof"}
+                                                </button>
+                                                <button
+                                                    class="btn btn-outline btn-sm"
+                                                    onclick={copy_proof_data}
+                                                >
+                                                    {"📋 Copy JSON"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                // Verification Result Display
+                                if let Some(result) = &props.state.verification_result {
+                                    <div class={classes!(
+                                        "card",
+                                        if result.is_valid && result.requirements_met {
+                                            "bg-success text-success-content"
+                                        } else {
+                                            "bg-error text-error-content"
+                                        }
+                                    )}>
+                                        <div class="card-body">
+                                            <h3 class="card-title">
+                                                {if result.is_valid && result.requirements_met {
+                                                    "🎉 Verification Successful!"
+                                                } else {
+                                                    "❌ Verification Failed"
+                                                }}
+                                            </h3>
+                                            <div class="text-sm">
+                                                <p>{"Valid Proof: "}{if result.is_valid { "✅" } else { "❌" }}</p>
+                                                <p>{"Requirements Met: "}{if result.requirements_met { "✅" } else { "❌" }}</p>
+                                                <p>{"Platform: "}{&result.details.platform}</p>
+                                                <p>{"Verified At: "}{result.details.verified_at.format("%Y-%m-%d %H:%M:%S")}</p>
+                                            </div>
+
+                                            if !result.warnings.is_empty() {
+                                                <div class="mt-2">
+                                                    <p class="text-sm font-semibold">{"Warnings:"}</p>
+                                                    <ul class="text-xs">
+                                                        {for result.warnings.iter().map(|warning| {
+                                                            html! { <li>{"• "}{warning}</li> }
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
 
                                 // Technical Details (Collapsible)
                                 <div class="collapse collapse-arrow bg-base-200">
                                     <input type="checkbox" />
                                     <div class="collapse-title text-sm font-medium">
-                                        {"🔧 Technical Details & Certificate Data"}
+                                        {"🔧 Technical Details & ZK Circuit Preview"}
                                     </div>
                                     <div class="collapse-content">
                                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                            // Certificate Raw Data
                                             <div>
                                                 <h4 class="font-semibold mb-2">{"📜 Certificate Structure:"}</h4>
                                                 <pre class="text-xs bg-base-300 p-3 rounded overflow-auto max-h-64">
@@ -194,28 +429,37 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                                                 </pre>
                                             </div>
 
-                                            // ZK Circuit Preview
                                             <div>
-                                                <h4 class="font-semibold mb-2">{"⚙️ ZK Circuit Preview:"}</h4>
+                                                <h4 class="font-semibold mb-2">{"⚙️ Aleo ZK Circuit:"}</h4>
                                                 <pre class="text-xs bg-base-300 p-3 rounded overflow-auto max-h-64">
-            {r#"// Aleo Language Skills Verification
+            {r#"// Language Proficiency Verification
 transition verify_language_skill(
+    private cert_level: u8,       // 4 (B2)
     private performance: u8,      // 94
-    private level_code: u8,       // 4 (B2)
-    private completion_date: u64, // timestamp
-    public min_performance: u8,   // 90
+    private student_hash: field,  // Private
     public min_level: u8,         // 4 (B2)
-    public min_date: u64         // 2023-01-01
+    public language: field,       // "German"
 ) -> bool {
-    let performance_check = performance >= min_performance;
-    let level_check = level_code >= min_level;
-    let date_check = completion_date >= min_date;
+    let level_check = cert_level >= min_level;
+    let performance_check = performance >= 70u8;
 
-    return performance_check && level_check && date_check;
-}"#}
+    return level_check && performance_check;
+}
+
+// What gets proven: ✅ B2+ German
+// What stays private: ❌ Exact score (94%)"#}
                                                 </pre>
                                             </div>
                                         </div>
+
+                                        if let Some(proof) = &props.state.zk_proof {
+                                            <div class="mt-4">
+                                                <h4 class="font-semibold mb-2">{"🔐 Generated ZK Proof:"}</h4>
+                                                <pre class="text-xs bg-base-300 p-3 rounded overflow-auto max-h-32">
+                                                    {serde_json::to_string_pretty(proof).unwrap_or_else(|_| "Error serializing proof".to_string())}
+                                                </pre>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             </div>

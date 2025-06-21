@@ -12,7 +12,7 @@ pub fn web5_certificate_image(props: &Web5CertificateImageProps) -> Html {
     let cert = &props.certificate_data;
 
     // Extract language and level from game_path_name
-    let (language, level) = parse_course_info(&cert.game_path_name);
+    let (language, _level) = parse_course_info(&cert.game_path_name);
     let grade = get_grade_from_percentage(cert.performance_percentage);
     let achievement_level = get_achievement_level(cert.performance_percentage);
     let formatted_course = format_course_name(&cert.game_path_name);
