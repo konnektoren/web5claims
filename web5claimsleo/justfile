@@ -1,0 +1,17 @@
+
+leo-build:
+    @echo "🔨 Building Leo program..."
+    leo build
+
+leo-test:
+    @echo "🧪 Testing Leo program..."
+    leo test
+
+leo-deploy:
+    @echo "🚀 Deploying to Aleo testnet..."
+    leo deploy --network testnet3
+
+# Simulate Aleo integration without Leo
+simulate-aleo:
+    @echo "🎭 Simulating Aleo integration..."
+    cargo test test_aleo_simulation
