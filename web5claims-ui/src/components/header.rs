@@ -17,6 +17,11 @@ pub fn header() -> Html {
         Callback::from(move |_| navigator.push(&Route::Issuer))
     };
 
+    let go_to_lookup = {
+        let navigator = navigator.clone();
+        Callback::from(move |_| navigator.push(&Route::CertificateLookup))
+    };
+
     let go_to_verifier = {
         let navigator = navigator.clone();
         Callback::from(move |_| navigator.push(&Route::Verifier))
@@ -48,11 +53,16 @@ pub fn header() -> Html {
                                         {"🎓 Issuer"}
                                     </button>
                                 </li>
+                                <li>
+                                    <button onclick={go_to_lookup.clone()}>
+                                        {"🔍 Lookup"}
+                                    </button>
+                                </li>
                             }
                             if has_verifier {
                                 <li>
                                     <button onclick={go_to_verifier.clone()}>
-                                        {"🔍 Verifier"}
+                                        {"✅ Verifier"}
                                     </button>
                                 </li>
                             }
@@ -96,6 +106,17 @@ pub fn header() -> Html {
                                     {"🎓 Issuer"}
                                 </button>
                             </li>
+                            <li>
+                                <button
+                                    class={classes!(
+                                        "btn", "btn-ghost",
+                                        if matches!(route, Route::CertificateLookup) { "btn-active" } else { "" }
+                                    )}
+                                    onclick={go_to_lookup}
+                                >
+                                    {"🔍 Lookup"}
+                                </button>
+                            </li>
                         }
                         if has_verifier {
                             <li>
@@ -106,7 +127,7 @@ pub fn header() -> Html {
                                     )}
                                     onclick={go_to_verifier}
                                 >
-                                    {"🔍 Verifier"}
+                                    {"✅ Verifier"}
                                 </button>
                             </li>
                         }

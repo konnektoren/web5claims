@@ -1,5 +1,7 @@
 use crate::components::layout::PageLayout;
-use crate::pages::{HomePage, IssuerPage, NotFoundPage, VerifierPage, VerifyProofPage};
+use crate::pages::{
+    CertificateLookupPage, HomePage, IssuerPage, NotFoundPage, VerifierPage, VerifyProofPage,
+};
 use crate::router::Route;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -16,16 +18,6 @@ pub fn app() -> Html {
 fn switch(route: Route) -> Html {
     // Debug logging
     log::info!("Current route: {:?}", route);
-
-    // Log current URL for debugging
-    if let Some(window) = web_sys::window() {
-        if let Ok(href) = window.location().href() {
-            log::info!("Current URL: {}", href);
-        }
-        if let Ok(hash) = window.location().hash() {
-            log::info!("Current hash: {}", hash);
-        }
-    }
 
     // Update document title
     if let Some(document) = web_sys::window().and_then(|w| w.document()) {
@@ -48,6 +40,17 @@ fn switch(route: Route) -> Html {
                 html! { <FeatureNotEnabled feature="issuer" /> }
             }
         }
+        Route::CertificateLookup => {
+            log::info!("Rendering CertificateLookupPage");
+            #[cfg(feature = "issuer")]
+            {
+                html! { <CertificateLookupPage /> }
+            }
+            #[cfg(not(feature = "issuer"))]
+            {
+                html! { <FeatureNotEnabled feature="issuer" /> }
+            }
+        }
         Route::Verifier => {
             log::info!("Rendering VerifierPage");
             #[cfg(feature = "verifier")]
@@ -61,15 +64,12 @@ fn switch(route: Route) -> Html {
         }
         Route::VerifyProof => {
             log::info!("Rendering VerifyProofPage");
-            log::info!("Verifier feature enabled: {}", cfg!(feature = "verifier"));
             #[cfg(feature = "verifier")]
             {
-                log::info!("About to render VerifyProofPage component");
                 html! { <VerifyProofPage /> }
             }
             #[cfg(not(feature = "verifier"))]
             {
-                log::warn!("Verifier feature not enabled, showing FeatureNotEnabled");
                 html! { <FeatureNotEnabled feature="verifier" /> }
             }
         }

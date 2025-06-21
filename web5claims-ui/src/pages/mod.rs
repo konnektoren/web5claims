@@ -1,9 +1,11 @@
+pub mod certificate_lookup;
 pub mod home;
 pub mod issuer;
 pub mod not_found;
 pub mod verifier;
 pub mod verify_proof;
 
+pub use certificate_lookup::CertificateLookupPage;
 pub use home::HomePage;
 pub use issuer::IssuerPage;
 pub use not_found::NotFoundPage;

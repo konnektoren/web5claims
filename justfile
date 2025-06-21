@@ -59,12 +59,6 @@ serve:
     @echo "🔗 App will be available at: http://127.0.0.1:8080/"
     cd {{ui_dir}} && trunk serve --public-url /
 
-# Preview production build locally
-preview-prod: build-ui-prod
-    @echo "🚀 Production build created!"
-    @echo "📁 Files are in {{ui_dir}}/dist/"
-    @echo "🌐 Starting local server at http://localhost:8000"
-    cd {{ui_dir}}/dist && python3 -m http.server 8000
 
 # Test verify URL handling specifically
 test-verify-url: build-github-pages
