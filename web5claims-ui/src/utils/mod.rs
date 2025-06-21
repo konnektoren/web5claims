@@ -1,4 +1,5 @@
 pub mod clipboard;
+pub mod proof_link;
 
 use konnektoren_core::certificates::CertificateData;
 

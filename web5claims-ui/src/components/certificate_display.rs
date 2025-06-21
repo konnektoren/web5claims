@@ -3,6 +3,7 @@ use crate::components::certificate_image::Web5CertificateImage;
 use crate::services::ZkService;
 use crate::types::AppState;
 use crate::utils::clipboard::copy_to_clipboard_simple;
+use crate::utils::proof_link::generate_verify_link;
 use web5claims::{CefrLevel, ClaimType};
 use yew::prelude::*;
 
@@ -200,17 +201,25 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
             }
         })
     };
-
     let copy_proof_data = {
         let state = props.state.clone();
         let copy_status = copy_status.clone();
 
         Callback::from(move |_| {
             if let Some(proof) = &state.zk_proof {
-                if let Ok(json) = serde_json::to_string_pretty(proof) {
-                    copy_to_clipboard_simple(&json, copy_status.clone());
-                } else {
-                    copy_status.set(Some("❌ Failed to serialize proof".to_string()));
+                // First try to generate a shareable link
+                match generate_verify_link(proof) {
+                    Ok(link) => {
+                        copy_to_clipboard_simple(&link, copy_status.clone());
+                    }
+                    Err(_) => {
+                        // Fall back to copying JSON
+                        if let Ok(json) = serde_json::to_string_pretty(proof) {
+                            copy_to_clipboard_simple(&json, copy_status.clone());
+                        } else {
+                            copy_status.set(Some("❌ Failed to serialize proof".to_string()));
+                        }
+                    }
                 }
             }
         })
