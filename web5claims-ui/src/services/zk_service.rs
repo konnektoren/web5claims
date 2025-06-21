@@ -1,8 +1,7 @@
 use konnektoren_core::certificates::CertificateData;
-use wasm_bindgen_futures::spawn_local;
 use web5claims::{
-    CefrLevel, CertificateIssuer, ClaimType, IssuerError, ProofOptions, ProofRequest,
-    VerificationResult, VerifierError, ZkProofClaim, ZkProofVerifier,
+    CefrLevel, CertificateIssuer, ClaimType, ProofOptions, ProofRequest, VerificationResult,
+    ZkProofClaim, ZkProofVerifier,
 };
 use yew::Callback;
 
@@ -31,24 +30,20 @@ impl ZkService {
         on_success: Callback<ZkProofClaim>,
         on_error: Callback<String>,
     ) {
-        let issuer = self.issuer.clone();
+        let request = ProofRequest {
+            certificate,
+            claim_type: ClaimType::LanguageProficiency {
+                language,
+                min_level,
+            },
+            target_platform: platform,
+            options: ProofOptions::default(),
+        };
 
-        spawn_local(async move {
-            let request = ProofRequest {
-                certificate,
-                claim_type: ClaimType::LanguageProficiency {
-                    language,
-                    min_level,
-                },
-                target_platform: platform,
-                options: ProofOptions::default(),
-            };
-
-            match issuer.generate_proof(request) {
-                Ok(proof) => on_success.emit(proof),
-                Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
-            }
-        });
+        match self.issuer.generate_proof(request) {
+            Ok(proof) => on_success.emit(proof),
+            Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
+        }
     }
 
     pub fn generate_performance_proof(
@@ -59,21 +54,17 @@ impl ZkService {
         on_success: Callback<ZkProofClaim>,
         on_error: Callback<String>,
     ) {
-        let issuer = self.issuer.clone();
+        let request = ProofRequest {
+            certificate,
+            claim_type: ClaimType::PerformanceThreshold { min_percentage },
+            target_platform: platform,
+            options: ProofOptions::default(),
+        };
 
-        spawn_local(async move {
-            let request = ProofRequest {
-                certificate,
-                claim_type: ClaimType::PerformanceThreshold { min_percentage },
-                target_platform: platform,
-                options: ProofOptions::default(),
-            };
-
-            match issuer.generate_proof(request) {
-                Ok(proof) => on_success.emit(proof),
-                Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
-            }
-        });
+        match self.issuer.generate_proof(request) {
+            Ok(proof) => on_success.emit(proof),
+            Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
+        }
     }
 
     pub fn generate_combined_proof(
@@ -84,21 +75,17 @@ impl ZkService {
         on_success: Callback<ZkProofClaim>,
         on_error: Callback<String>,
     ) {
-        let issuer = self.issuer.clone();
+        let request = ProofRequest {
+            certificate,
+            claim_type: ClaimType::Combined { criteria },
+            target_platform: platform,
+            options: ProofOptions::default(),
+        };
 
-        spawn_local(async move {
-            let request = ProofRequest {
-                certificate,
-                claim_type: ClaimType::Combined { criteria },
-                target_platform: platform,
-                options: ProofOptions::default(),
-            };
-
-            match issuer.generate_proof(request) {
-                Ok(proof) => on_success.emit(proof),
-                Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
-            }
-        });
+        match self.issuer.generate_proof(request) {
+            Ok(proof) => on_success.emit(proof),
+            Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
+        }
     }
 
     pub fn verify_proof(
@@ -107,14 +94,10 @@ impl ZkService {
         on_success: Callback<VerificationResult>,
         on_error: Callback<String>,
     ) {
-        let verifier = self.verifier.clone();
-
-        spawn_local(async move {
-            match verifier.verify_proof(&proof) {
-                Ok(result) => on_success.emit(result),
-                Err(e) => on_error.emit(format!("Proof verification failed: {}", e)),
-            }
-        });
+        match self.verifier.verify_proof(&proof) {
+            Ok(result) => on_success.emit(result),
+            Err(e) => on_error.emit(format!("Proof verification failed: {}", e)),
+        }
     }
 }
 

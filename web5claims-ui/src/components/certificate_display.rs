@@ -1,7 +1,10 @@
 use crate::components::certificate_image::Web5CertificateImage;
 use crate::services::ZkService;
 use crate::types::AppState;
+use gloo::utils::document;
+use wasm_bindgen::JsCast;
 use web5claims::{CefrLevel, ClaimType};
+use web_sys::{HtmlDocument, HtmlTextAreaElement};
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -12,6 +15,7 @@ pub struct CertificateDisplayProps {
 #[function_component(CertificateDisplay)]
 pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
     let zk_service = use_state(|| ZkService::new());
+    let copy_status = use_state(|| None::<String>);
 
     let generate_language_proof = {
         let state = props.state.clone();
@@ -201,12 +205,27 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
     let copy_proof_data = {
         let state = props.state.clone();
+        let copy_status = copy_status.clone();
+
         Callback::from(move |_| {
             if let Some(proof) = &state.zk_proof {
                 if let Ok(json) = serde_json::to_string_pretty(proof) {
-                    // Copy to clipboard logic here
-                    gloo::console::log!("ZK Proof JSON:", &json);
+                    copy_to_clipboard_simple(&json, copy_status.clone());
+                } else {
+                    copy_status.set(Some("❌ Failed to serialize proof".to_string()));
                 }
+            }
+        })
+    };
+
+    let copy_certificate_data = {
+        let state = props.state.clone();
+        let copy_status = copy_status.clone();
+
+        Callback::from(move |_| {
+            if let Some(cert) = &state.certificate_data {
+                let cert_data = cert.to_base64();
+                copy_to_clipboard_simple(&cert_data, copy_status.clone());
             }
         })
     };
@@ -218,6 +237,18 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
             html! {
                             <div class="space-y-6">
+                                // Copy Status Toast
+                                if let Some(status) = &*copy_status {
+                                    <div class="toast toast-top toast-center">
+                                        <div class={classes!(
+                                            "alert",
+                                            if status.contains("✅") { "alert-success" } else { "alert-error" }
+                                        )}>
+                                            <span>{status}</span>
+                                        </div>
+                                    </div>
+                                }
+
                                 // Error Display
                                 if let Some(error) = &props.state.error_message {
                                     <div class="alert alert-error shadow-lg">
@@ -239,6 +270,24 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
                                         <div class="flex justify-center mb-4">
                                             <Web5CertificateImage certificate_data={cert.clone()} />
+                                        </div>
+
+                                        // Certificate Actions
+                                        <div class="flex flex-wrap gap-2 justify-center">
+                                            <button
+                                                class="btn btn-outline btn-sm"
+                                                onclick={copy_certificate_data}
+                                                title="Copy certificate data"
+                                            >
+                                                {"📋 Copy Data"}
+                                            </button>
+                                            <a
+                                                class="btn btn-outline btn-sm"
+                                                href={format!("data:text/plain;charset=utf-8,{}", cert.to_base64())}
+                                                download="certificate.txt"
+                                            >
+                                                {"💾 Download"}
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -483,6 +532,84 @@ transition verify_language_skill(
                         </div>
                     </div>
                 </div>
+            }
+        }
+    }
+}
+
+// Simplified clipboard function - Fixed lifetime issue by taking owned String
+fn copy_to_clipboard_simple(text: &str, copy_status: UseStateHandle<Option<String>>) {
+    // Convert &str to owned String to fix lifetime issue
+    let text_owned = text.to_string();
+
+    if let Some(window) = web_sys::window() {
+        // clipboard() returns Clipboard directly
+        let clipboard = window.navigator().clipboard();
+        let promise = clipboard.write_text(&text_owned);
+        let copy_status = copy_status.clone();
+
+        wasm_bindgen_futures::spawn_local(async move {
+            match wasm_bindgen_futures::JsFuture::from(promise).await {
+                Ok(_) => {
+                    copy_status.set(Some("✅ Copied to clipboard!".to_string()));
+                    // Clear message after 3 seconds
+                    let copy_status_clear = copy_status.clone();
+                    gloo::timers::callback::Timeout::new(3000, move || {
+                        copy_status_clear.set(None);
+                    })
+                    .forget();
+                }
+                Err(_) => {
+                    // Fall back to legacy method
+                    fallback_copy(&text_owned, copy_status);
+                }
+            }
+        });
+    } else {
+        copy_status.set(Some("❌ Cannot access clipboard".to_string()));
+    }
+}
+
+// Fallback copy function - Fixed style() API call and lifetime issue
+fn fallback_copy(text: &str, copy_status: UseStateHandle<Option<String>>) {
+    let document = document();
+
+    // Create temporary textarea
+    if let Ok(textarea) = document.create_element("textarea") {
+        if let Ok(textarea) = textarea.dyn_into::<HtmlTextAreaElement>() {
+            textarea.set_value(text);
+
+            // Style the textarea to be invisible - style() returns CssStyleDeclaration directly
+            let style = textarea.style();
+            let _ = style.set_property("position", "fixed");
+            let _ = style.set_property("left", "-9999px");
+            let _ = style.set_property("opacity", "0");
+
+            // Add to DOM, select, copy, and remove
+            if let Some(body) = document.body() {
+                if body.append_child(&textarea).is_ok() {
+                    textarea.select();
+
+                    // Try to copy
+                    if let Ok(html_doc) = document.dyn_into::<HtmlDocument>() {
+                        if html_doc.exec_command("copy").unwrap_or(false) {
+                            copy_status.set(Some("✅ Copied to clipboard!".to_string()));
+                        } else {
+                            copy_status.set(Some("❌ Copy failed".to_string()));
+                        }
+                    } else {
+                        copy_status.set(Some("❌ Copy not supported".to_string()));
+                    }
+
+                    let _ = body.remove_child(&textarea);
+
+                    // Clear message after 3 seconds
+                    let copy_status_clear = copy_status.clone();
+                    gloo::timers::callback::Timeout::new(3000, move || {
+                        copy_status_clear.set(None);
+                    })
+                    .forget();
+                }
             }
         }
     }

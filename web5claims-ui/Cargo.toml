@@ -8,7 +8,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 yew = { version = "0.21", features = ["csr"] }
-web-sys = "0.3"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
@@ -18,7 +17,26 @@ chrono = { version = "0.4", features = ["serde", "wasmbind"] }
 gloo = "0.11"
 uuid = { version = "1.0", features = ["v4", "serde", "js"] }
 
+# Add the main web5claims crate
 web5claims = { path = ".." }
+
+# Web-sys with all the features we need for clipboard and DOM manipulation
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "console",
+    "Document",
+    "Element",
+    "HtmlDocument",
+    "HtmlElement",
+    "HtmlTextAreaElement",
+    "HtmlInputElement",
+    "Window",
+    "Navigator",
+    "Clipboard",
+    "CssStyleDeclaration",
+    "Node",
+]
 
 [dependencies.konnektoren-core]
 git = "https://github.com/konnektoren/konnektoren-rs.git"
