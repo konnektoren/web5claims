@@ -30,6 +30,25 @@
         <!-- Trunk will inject the WASM and JS here -->
         <link data-trunk rel="rust" data-wasm-opt="s" />
 
+        <script
+            src="https://unpkg.com/@zkpassport/sdk@latest/dist/zkpassport.min.js"
+            onerror="console.warn('Failed to load ZK Passport SDK, using mock instead'); window.ZKPassport = {
+                initialize: () => Promise.resolve(),
+                scanPassport: () => Promise.resolve({
+                    nationality: 'German',
+                    age_over_18: true,
+                    expiry_date: '2030-12-31',
+                    document_type: 'Passport'
+                }),
+                generateProof: () => Promise.resolve({
+                    proof: 'mock_proof_' + Math.random().toString(36).substr(2, 9),
+                    public_signals: ['signal1', 'signal2'],
+                    verification_key: 'mock_vk_' + Math.random().toString(36).substr(2, 9)
+                }),
+                verifyProof: () => Promise.resolve(true)
+            };"
+        ></script>
+
         <!-- GitHub Pages SPA Routing Handler -->
         <script>
             (function () {

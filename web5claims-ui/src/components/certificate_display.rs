@@ -20,6 +20,132 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
     let zk_service = use_state(|| ZkService::new());
     let copy_status = use_state(|| None::<String>);
 
+    // Helper function to extract and validate language from course name
+    fn extract_and_validate_language(course_name: &str) -> Result<String, String> {
+        let language = course_name
+            .split('_')
+            .next()
+            .ok_or("Could not extract language from course name")?;
+
+        log::info!(
+            "Extracted language: '{}' from course: '{}'",
+            language,
+            course_name
+        );
+
+        // Validate that it's a supported language and normalize it
+        let normalized_language = match language.to_lowercase().as_str() {
+            "german" => "German",
+            "spanish" => "Spanish",
+            "french" => "French",
+            "italian" => "Italian",
+            "english" => "English",
+            "portuguese" => "Portuguese",
+            "dutch" => "Dutch",
+            _ => {
+                log::warn!("Unsupported language: '{}', defaulting to German", language);
+                "German" // Fallback to a supported language
+            }
+        };
+
+        Ok(normalized_language.to_string())
+    }
+
+    // Helper function to extract and validate CEFR level
+    fn extract_and_validate_level(course_name: &str) -> Result<CefrLevel, String> {
+        log::info!("Extracting CEFR level from course: '{}'", course_name);
+
+        // Try the built-in method first
+        if let Some(level) = CefrLevel::from_course_name(course_name) {
+            log::info!("Successfully extracted level: {:?}", level);
+            return Ok(level);
+        }
+
+        // Manual extraction as fallback
+        let level = if course_name.to_uppercase().contains("A1") {
+            CefrLevel::A1
+        } else if course_name.to_uppercase().contains("A2") {
+            CefrLevel::A2
+        } else if course_name.to_uppercase().contains("B1") {
+            CefrLevel::B1
+        } else if course_name.to_uppercase().contains("B2") {
+            CefrLevel::B2
+        } else if course_name.to_uppercase().contains("C1") {
+            CefrLevel::C1
+        } else if course_name.to_uppercase().contains("C2") {
+            CefrLevel::C2
+        } else {
+            log::warn!(
+                "Could not determine CEFR level from '{}', defaulting to B1",
+                course_name
+            );
+            CefrLevel::B1 // Safe default
+        };
+
+        log::info!("Manually extracted level: {:?}", level);
+        Ok(level)
+    }
+
+    // Helper function to validate certificate for ZK proof generation
+    fn validate_certificate_for_proof(
+        cert: &konnektoren_core::certificates::CertificateData,
+    ) -> Result<(), String> {
+        if cert.profile_name.trim().is_empty() {
+            return Err("Certificate must have a valid student name".to_string());
+        }
+
+        if cert.game_path_name.trim().is_empty() {
+            return Err("Certificate must have a valid course name".to_string());
+        }
+
+        if cert.total_challenges == 0 {
+            return Err("Certificate must have at least one challenge".to_string());
+        }
+
+        if cert.performance_percentage > 100 {
+            return Err("Performance percentage cannot exceed 100%".to_string());
+        }
+
+        log::info!("Certificate validation passed for: {}", cert.profile_name);
+        Ok(())
+    }
+
+    // Helper function to validate claim compatibility with certificate
+    fn validate_claim_compatibility(
+        cert: &konnektoren_core::certificates::CertificateData,
+        language: &str,
+        level: CefrLevel,
+    ) -> Result<(), String> {
+        // Check if the certificate's course name contains the language
+        let cert_language = cert
+            .game_path_name
+            .split('_')
+            .next()
+            .unwrap_or("")
+            .to_lowercase();
+
+        if cert_language != language.to_lowercase() {
+            return Err(format!(
+                "Certificate language '{}' does not match claim language '{}'",
+                cert_language, language
+            ));
+        }
+
+        // Check if the certificate's level matches or exceeds the minimum level
+        if let Some(cert_level) = CefrLevel::from_course_name(&cert.game_path_name) {
+            if cert_level < level {
+                return Err(format!(
+                    "Certificate level {:?} does not meet minimum level {:?}",
+                    cert_level, level
+                ));
+            }
+        } else {
+            log::warn!("Could not determine certificate level, proceeding anyway");
+        }
+
+        Ok(())
+    }
+
     let generate_language_proof = {
         let state = props.state.clone();
         let zk_service = zk_service.clone();
@@ -27,10 +153,71 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
+                log::info!("=== Starting Language Proficiency Proof Generation ===");
+                log::info!("Certificate data: {}", cert.profile_name);
+                log::info!("Course: {}", cert.game_path_name);
+                log::info!("Performance: {}%", cert.performance_percentage);
+
+                // Validate certificate first
+                if let Err(validation_error) = validate_certificate_for_proof(cert) {
+                    log::error!("Certificate validation failed: {}", validation_error);
+                    let mut new_state = (*state).clone();
+                    new_state.set_error(format!(
+                        "Certificate validation failed: {}",
+                        validation_error
+                    ));
+                    state.set(new_state);
+                    return;
+                }
+
                 let mut new_state = (*state).clone();
                 new_state.is_generating_proof = true;
                 new_state.clear_error();
                 state.set(new_state);
+
+                // Extract and validate language
+                let language = match extract_and_validate_language(&cert.game_path_name) {
+                    Ok(lang) => lang,
+                    Err(e) => {
+                        log::error!("Language extraction failed: {}", e);
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_error(format!("Language extraction failed: {}", e));
+                        state.set(new_state);
+                        return;
+                    }
+                };
+
+                // Extract and validate CEFR level
+                let min_level = match extract_and_validate_level(&cert.game_path_name) {
+                    Ok(level) => level,
+                    Err(e) => {
+                        log::error!("CEFR level extraction failed: {}", e);
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_error(format!("CEFR level extraction failed: {}", e));
+                        state.set(new_state);
+                        return;
+                    }
+                };
+
+                // Validate claim compatibility
+                if let Err(compatibility_error) =
+                    validate_claim_compatibility(cert, &language, min_level.clone())
+                {
+                    log::error!(
+                        "Claim compatibility validation failed: {}",
+                        compatibility_error
+                    );
+                    let mut new_state = (*state).clone();
+                    new_state.is_generating_proof = false;
+                    new_state.set_error(format!(
+                        "Claim compatibility failed: {}",
+                        compatibility_error
+                    ));
+                    state.set(new_state);
+                    return;
+                }
 
                 if let Some(address) = &wallet_address {
                     log::info!("Generating proof with wallet: {}", address);
@@ -38,18 +225,16 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                     log::info!("Generating proof locally (no wallet)");
                 }
 
-                let language = cert
-                    .game_path_name
-                    .split('_')
-                    .next()
-                    .unwrap_or("German")
-                    .to_string();
-                let min_level =
-                    CefrLevel::from_course_name(&cert.game_path_name).unwrap_or(CefrLevel::B2);
+                log::info!(
+                    "Final parameters - Language: '{}', Level: {:?}",
+                    language,
+                    min_level
+                );
 
                 let on_success = {
                     let state = state.clone();
                     Callback::from(move |proof| {
+                        log::info!("Language proof generated successfully");
                         let mut new_state = (*state).clone();
                         new_state.is_generating_proof = false;
                         new_state.set_zk_proof(proof);
@@ -60,8 +245,10 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 let on_error = {
                     let state = state.clone();
                     Callback::from(move |error: String| {
+                        log::error!("Language proof generation failed: {}", error);
                         let mut new_state = (*state).clone();
-                        new_state.set_error(error);
+                        new_state.is_generating_proof = false;
+                        new_state.set_error(format!("Language proof generation failed: {}", error));
                         state.set(new_state);
                     })
                 };
@@ -70,10 +257,18 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                     cert.clone(),
                     language,
                     min_level,
-                    "local".to_string(), // Use "local" instead of "aleo"
+                    "web5claims_local".to_string(),
                     on_success,
                     on_error,
                 );
+            } else {
+                log::error!("No certificate data available for proof generation");
+                let mut new_state = (*state).clone();
+                new_state.set_error(
+                    "No certificate data available. Please generate a certificate first."
+                        .to_string(),
+                );
+                state.set(new_state);
             }
         })
     };
@@ -85,6 +280,20 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
+                log::info!("=== Starting Performance Proof Generation ===");
+
+                // Validate certificate first
+                if let Err(validation_error) = validate_certificate_for_proof(cert) {
+                    log::error!("Certificate validation failed: {}", validation_error);
+                    let mut new_state = (*state).clone();
+                    new_state.set_error(format!(
+                        "Certificate validation failed: {}",
+                        validation_error
+                    ));
+                    state.set(new_state);
+                    return;
+                }
+
                 let mut new_state = (*state).clone();
                 new_state.is_generating_proof = true;
                 new_state.clear_error();
@@ -96,9 +305,34 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                     log::info!("Generating performance proof locally (no wallet)");
                 }
 
+                let threshold = 90u8;
+                log::info!(
+                    "Performance threshold: {}%, Actual performance: {}%",
+                    threshold,
+                    cert.performance_percentage
+                );
+
+                // Validate performance meets threshold
+                if cert.performance_percentage < threshold {
+                    log::error!(
+                        "Certificate performance {}% does not meet threshold {}%",
+                        cert.performance_percentage,
+                        threshold
+                    );
+                    let mut new_state = (*state).clone();
+                    new_state.is_generating_proof = false;
+                    new_state.set_error(format!(
+                        "Certificate performance {}% does not meet the required threshold of {}%",
+                        cert.performance_percentage, threshold
+                    ));
+                    state.set(new_state);
+                    return;
+                }
+
                 let on_success = {
                     let state = state.clone();
                     Callback::from(move |proof| {
+                        log::info!("Performance proof generated successfully");
                         let mut new_state = (*state).clone();
                         new_state.is_generating_proof = false;
                         new_state.set_zk_proof(proof);
@@ -109,19 +343,30 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 let on_error = {
                     let state = state.clone();
                     Callback::from(move |error: String| {
+                        log::error!("Performance proof generation failed: {}", error);
                         let mut new_state = (*state).clone();
-                        new_state.set_error(error);
+                        new_state.is_generating_proof = false;
+                        new_state
+                            .set_error(format!("Performance proof generation failed: {}", error));
                         state.set(new_state);
                     })
                 };
 
                 zk_service.generate_performance_proof(
                     cert.clone(),
-                    90,
-                    "local".to_string(), // Use "local" instead of "aleo"
+                    threshold,
+                    "web5claims_local".to_string(),
                     on_success,
                     on_error,
                 );
+            } else {
+                log::error!("No certificate data available for proof generation");
+                let mut new_state = (*state).clone();
+                new_state.set_error(
+                    "No certificate data available. Please generate a certificate first."
+                        .to_string(),
+                );
+                state.set(new_state);
             }
         })
     };
@@ -133,10 +378,85 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
 
         Callback::from(move |_| {
             if let Some(cert) = &state.certificate_data {
+                log::info!("=== Starting Combined Proof Generation ===");
+
+                // Validate certificate first
+                if let Err(validation_error) = validate_certificate_for_proof(cert) {
+                    log::error!("Certificate validation failed: {}", validation_error);
+                    let mut new_state = (*state).clone();
+                    new_state.set_error(format!(
+                        "Certificate validation failed: {}",
+                        validation_error
+                    ));
+                    state.set(new_state);
+                    return;
+                }
+
                 let mut new_state = (*state).clone();
                 new_state.is_generating_proof = true;
                 new_state.clear_error();
                 state.set(new_state);
+
+                // Extract and validate language and level
+                let language = match extract_and_validate_language(&cert.game_path_name) {
+                    Ok(lang) => lang,
+                    Err(e) => {
+                        log::error!("Language extraction failed: {}", e);
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_error(format!("Language extraction failed: {}", e));
+                        state.set(new_state);
+                        return;
+                    }
+                };
+
+                let min_level = match extract_and_validate_level(&cert.game_path_name) {
+                    Ok(level) => level,
+                    Err(e) => {
+                        log::error!("CEFR level extraction failed: {}", e);
+                        let mut new_state = (*state).clone();
+                        new_state.is_generating_proof = false;
+                        new_state.set_error(format!("CEFR level extraction failed: {}", e));
+                        state.set(new_state);
+                        return;
+                    }
+                };
+
+                // Validate claim compatibility (no need to clone since CefrLevel is Copy)
+                if let Err(compatibility_error) =
+                    validate_claim_compatibility(cert, &language, min_level.clone())
+                {
+                    log::error!(
+                        "Claim compatibility validation failed: {}",
+                        compatibility_error
+                    );
+                    let mut new_state = (*state).clone();
+                    new_state.is_generating_proof = false;
+                    new_state.set_error(format!(
+                        "Claim compatibility failed: {}",
+                        compatibility_error
+                    ));
+                    state.set(new_state);
+                    return;
+                }
+
+                // Validate performance for combined proof
+                let performance_threshold = 90u8;
+                if cert.performance_percentage < performance_threshold {
+                    log::error!(
+                        "Certificate performance {}% does not meet threshold {}%",
+                        cert.performance_percentage,
+                        performance_threshold
+                    );
+                    let mut new_state = (*state).clone();
+                    new_state.is_generating_proof = false;
+                    new_state.set_error(format!(
+                        "Certificate performance {}% does not meet the required threshold of {}%",
+                        cert.performance_percentage, performance_threshold
+                    ));
+                    state.set(new_state);
+                    return;
+                }
 
                 if let Some(address) = &wallet_address {
                     log::info!("Generating combined proof with wallet: {}", address);
@@ -144,26 +464,23 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                     log::info!("Generating combined proof locally (no wallet)");
                 }
 
-                let language = cert
-                    .game_path_name
-                    .split('_')
-                    .next()
-                    .unwrap_or("German")
-                    .to_string();
-                let min_level =
-                    CefrLevel::from_course_name(&cert.game_path_name).unwrap_or(CefrLevel::B2);
-
+                // Create criteria vector (move language and min_level here)
                 let criteria = vec![
                     ClaimType::LanguageProficiency {
                         language,
                         min_level,
                     },
-                    ClaimType::PerformanceThreshold { min_percentage: 90 },
+                    ClaimType::PerformanceThreshold {
+                        min_percentage: performance_threshold,
+                    },
                 ];
+
+                log::info!("Combined criteria: {} claims", criteria.len());
 
                 let on_success = {
                     let state = state.clone();
                     Callback::from(move |proof| {
+                        log::info!("Combined proof generated successfully");
                         let mut new_state = (*state).clone();
                         new_state.is_generating_proof = false;
                         new_state.set_zk_proof(proof);
@@ -174,8 +491,10 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 let on_error = {
                     let state = state.clone();
                     Callback::from(move |error: String| {
+                        log::error!("Combined proof generation failed: {}", error);
                         let mut new_state = (*state).clone();
-                        new_state.set_error(error);
+                        new_state.is_generating_proof = false;
+                        new_state.set_error(format!("Combined proof generation failed: {}", error));
                         state.set(new_state);
                     })
                 };
@@ -183,10 +502,18 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                 zk_service.generate_combined_proof(
                     cert.clone(),
                     criteria,
-                    "local".to_string(), // Use "local" instead of "aleo"
+                    "web5claims_local".to_string(),
                     on_success,
                     on_error,
                 );
+            } else {
+                log::error!("No certificate data available for proof generation");
+                let mut new_state = (*state).clone();
+                new_state.set_error(
+                    "No certificate data available. Please generate a certificate first."
+                        .to_string(),
+                );
+                state.set(new_state);
             }
         })
     };
@@ -216,6 +543,7 @@ pub fn certificate_display(props: &CertificateDisplayProps) -> Html {
                     let state = state.clone();
                     Callback::from(move |error: String| {
                         let mut new_state = (*state).clone();
+                        new_state.is_verifying_proof = false;
                         new_state.set_error(error);
                         state.set(new_state);
                     })

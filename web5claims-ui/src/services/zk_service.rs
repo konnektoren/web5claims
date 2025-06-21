@@ -30,6 +30,22 @@ impl ZkService {
         on_success: Callback<ZkProofClaim>,
         on_error: Callback<String>,
     ) {
+        log::info!("=== Language Proficiency Proof Generation ===");
+        log::info!("Certificate Details:");
+        log::info!("  - Profile: {}", certificate.profile_name);
+        log::info!("  - Course: {}", certificate.game_path_name);
+        log::info!("  - Performance: {}%", certificate.performance_percentage);
+        log::info!(
+            "  - Solved: {}/{}",
+            certificate.solved_challenges,
+            certificate.total_challenges
+        );
+        log::info!("  - Date: {}", certificate.date);
+        log::info!("Claim Details:");
+        log::info!("  - Language: {}", language);
+        log::info!("  - Min Level: {:?}", min_level);
+        log::info!("  - Platform: {}", platform);
+
         let request = ProofRequest {
             certificate,
             claim_type: ClaimType::LanguageProficiency {
@@ -41,8 +57,17 @@ impl ZkService {
         };
 
         match self.issuer.generate_proof(request) {
-            Ok(proof) => on_success.emit(proof),
-            Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
+            Ok(proof) => {
+                log::info!(
+                    "✅ Proof generated successfully with ID: {}",
+                    proof.proof_id
+                );
+                on_success.emit(proof);
+            }
+            Err(e) => {
+                log::error!("❌ Proof generation failed: {}", e);
+                on_error.emit(format!("Proof generation failed: {}", e));
+            }
         }
     }
 
@@ -54,6 +79,20 @@ impl ZkService {
         on_success: Callback<ZkProofClaim>,
         on_error: Callback<String>,
     ) {
+        log::info!("=== Performance Proof Generation ===");
+        log::info!("Certificate Details:");
+        log::info!("  - Profile: {}", certificate.profile_name);
+        log::info!("  - Course: {}", certificate.game_path_name);
+        log::info!("  - Performance: {}%", certificate.performance_percentage);
+        log::info!(
+            "  - Solved: {}/{}",
+            certificate.solved_challenges,
+            certificate.total_challenges
+        );
+        log::info!("Claim Details:");
+        log::info!("  - Min Percentage: {}%", min_percentage);
+        log::info!("  - Platform: {}", platform);
+
         let request = ProofRequest {
             certificate,
             claim_type: ClaimType::PerformanceThreshold { min_percentage },
@@ -62,8 +101,17 @@ impl ZkService {
         };
 
         match self.issuer.generate_proof(request) {
-            Ok(proof) => on_success.emit(proof),
-            Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
+            Ok(proof) => {
+                log::info!(
+                    "✅ Performance proof generated successfully with ID: {}",
+                    proof.proof_id
+                );
+                on_success.emit(proof);
+            }
+            Err(e) => {
+                log::error!("❌ Performance proof generation failed: {}", e);
+                on_error.emit(format!("Performance proof generation failed: {}", e));
+            }
         }
     }
 
@@ -75,6 +123,10 @@ impl ZkService {
         on_success: Callback<ZkProofClaim>,
         on_error: Callback<String>,
     ) {
+        log::info!("Starting combined proof generation");
+        log::info!("Certificate: {:?}", certificate.profile_name);
+        log::info!("Criteria count: {}, Platform: {}", criteria.len(), platform);
+
         let request = ProofRequest {
             certificate,
             claim_type: ClaimType::Combined { criteria },
@@ -83,8 +135,17 @@ impl ZkService {
         };
 
         match self.issuer.generate_proof(request) {
-            Ok(proof) => on_success.emit(proof),
-            Err(e) => on_error.emit(format!("Proof generation failed: {}", e)),
+            Ok(proof) => {
+                log::info!(
+                    "Combined proof generated successfully with ID: {}",
+                    proof.proof_id
+                );
+                on_success.emit(proof);
+            }
+            Err(e) => {
+                log::error!("Combined proof generation failed: {}", e);
+                on_error.emit(format!("Combined proof generation failed: {}", e));
+            }
         }
     }
 

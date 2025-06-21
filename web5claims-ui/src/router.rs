@@ -13,6 +13,8 @@ pub enum Route {
     Verifier,
     #[at("/verify")]
     VerifyProof,
+    #[at("/zkpassport")] // Add this
+    ZkPassport,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -26,6 +28,7 @@ impl std::fmt::Display for Route {
             Route::CertificateLookup => write!(f, "/lookup"),
             Route::Verifier => write!(f, "/verifier"),
             Route::VerifyProof => write!(f, "/verify"),
+            Route::ZkPassport => write!(f, "/zkpassport"), // Add this
             Route::NotFound => write!(f, "/404"),
         }
     }
@@ -39,6 +42,7 @@ impl Route {
             Route::CertificateLookup => "Certificate Lookup - Web5 Claims",
             Route::Verifier => "Proof Verifier - Web5 Claims",
             Route::VerifyProof => "Verify Proof - Web5 Claims",
+            Route::ZkPassport => "ZK Passport - Web5 Claims", // Add this
             Route::NotFound => "Page Not Found - Web5 Claims",
         }
     }
@@ -54,6 +58,7 @@ impl Route {
             }
             Route::Verifier => "Verify zero-knowledge proofs without revealing private data",
             Route::VerifyProof => "Verifying a zero-knowledge proof link",
+            Route::ZkPassport => "Identity verification using ZK Passport technology", // Add this
             Route::NotFound => "The requested page could not be found",
         }
     }
