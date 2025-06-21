@@ -25,7 +25,7 @@ build-ui:
 # Build the Yew UI for production (GitHub Pages)
 build-ui-prod:
     @echo "🎨 Building Yew UI for production..."
-    cd {{ui_dir}} && trunk build --release --public-url /{{repo_name}}/
+    cd {{ui_dir}} && trunk build --release --public-url /
 
 # Build the Yew UI for GitHub Pages with additional setup
 build-github-pages: build build-ui-prod
@@ -34,6 +34,13 @@ build-github-pages: build build-ui-prod
     touch .nojekyll && \
     cp index.html 404.html && \
     echo "GitHub Pages SPA routing files created"
+
+# Preview production build locally (updated command)
+preview-prod: build-ui-prod
+    @echo "🚀 Production build created!"
+    @echo "📁 Files are in {{ui_dir}}/dist/"
+    @echo "🌐 Starting local server at http://localhost:8000"
+    cd {{ui_dir}}/dist && python3 -m http.server 8000
 
 # Build everything for production
 build-all-prod: build build-ui-prod

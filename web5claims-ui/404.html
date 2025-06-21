@@ -9,6 +9,9 @@
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+        <!-- Set base href to root for GitHub Pages -->
+        <base href="/" />
+
         <!-- Favicon -->
         <link
             rel="icon"
@@ -55,9 +58,7 @@
                     window.location.search +
                     window.location.hash;
                 sessionStorage.setItem("spaRedirect", path);
-                window.location.replace(
-                    window.location.origin + "/web5claims/",
-                );
+                window.location.replace(window.location.origin + "/");
             }
         </script>
     </head>

@@ -47,7 +47,7 @@ jobs:
       - name: Build UI with trunk for GitHub Pages
         run: |
           cd web5claims-ui
-          trunk build --release --public-url /web5claims/
+          trunk build --release --public-url /
 
       - name: Create additional GitHub Pages files
         run: |

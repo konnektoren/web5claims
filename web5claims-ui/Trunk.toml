@@ -1,7 +1,7 @@
 [build]
 target = "index.html"
 dist = "dist"
-# Use root path for development, will be overridden for production
+# Use root path for both development and production
 public_url = "/"
 
 [watch]

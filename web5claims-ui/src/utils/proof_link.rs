@@ -11,21 +11,13 @@ pub fn generate_verify_link(proof: &ZkProofClaim) -> Result<String, String> {
     let compressed = compress_string(&json)?;
     let encoded = general_purpose::URL_SAFE_NO_PAD.encode(compressed);
 
-    // Get current origin and check if we're on GitHub Pages
+    // Get current origin
     let window = web_sys::window().ok_or("No window available")?;
     let location = window.location();
     let origin = location.origin().map_err(|_| "Could not get origin")?;
-    let pathname = location.pathname().map_err(|_| "Could not get pathname")?;
 
-    // Determine base path (for GitHub Pages)
-    let base_path = if pathname.starts_with("/web5claims") {
-        "/web5claims"
-    } else {
-        ""
-    };
-
-    // Create verification URL with query parameter
-    let verify_url = format!("{}{}/verify?proof={}", origin, base_path, encoded);
+    // Create verification URL with query parameter (no subdirectory)
+    let verify_url = format!("{}/verify?proof={}", origin, encoded);
 
     Ok(verify_url)
 }
