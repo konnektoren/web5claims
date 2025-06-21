@@ -8,33 +8,6 @@
             content="Zero-knowledge verifiable credential system for language learning achievements, built for ZK Hack Berlin"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="author" content="Web5 Claims Team" />
-        <meta
-            name="keywords"
-            content="zero-knowledge, zk, language learning, certificates, blockchain, aleo"
-        />
-
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="website" />
-        <meta
-            property="og:title"
-            content="Web5 Claims - ZK Language Learning Certificates"
-        />
-        <meta
-            property="og:description"
-            content="Privacy-preserving certificate verification system for language learning achievements"
-        />
-
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta
-            property="twitter:title"
-            content="Web5 Claims - ZK Language Learning Certificates"
-        />
-        <meta
-            property="twitter:description"
-            content="Privacy-preserving certificate verification system for language learning achievements"
-        />
 
         <!-- Favicon -->
         <link
@@ -51,72 +24,54 @@
         />
         <script src="https://cdn.tailwindcss.com"></script>
 
-        <!-- SPA Routing Redirect Script -->
+        <!-- GitHub Pages SPA Redirect Script -->
         <script>
-            // Handling SPA routes in 404.html
-            (function () {
-                // Get the current URL path and query
-                var path = window.location.pathname;
-                var search = window.location.search;
-                var hash = window.location.hash;
-
-                // Skip for asset requests
-                if (
-                    path.match(
-                        /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/,
-                    )
-                ) {
-                    return;
+            // Store the attempted URL and redirect to index.html
+            (function (l) {
+                if (l.search[1] === "/") {
+                    var decoded = l.search
+                        .slice(1)
+                        .split("&")
+                        .map(function (s) {
+                            return s.replace(/~and~/g, "&");
+                        })
+                        .join("?");
+                    window.history.replaceState(
+                        null,
+                        null,
+                        l.pathname.slice(0, -1) + decoded + l.hash,
+                    );
                 }
+            })(window.location);
 
-                // Store the URL we're trying to access
-                var redirectUrl = path + search + hash;
-
-                // Redirect to the home page with the original URL in sessionStorage
-                sessionStorage.setItem("spaRedirect", redirectUrl);
-                window.location.href = "/";
-            })();
+            // For non-asset requests, redirect to index with path encoded
+            if (
+                !window.location.pathname.match(
+                    /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|wasm)$/,
+                )
+            ) {
+                var path =
+                    window.location.pathname +
+                    window.location.search +
+                    window.location.hash;
+                sessionStorage.setItem("spaRedirect", path);
+                window.location.replace(
+                    window.location.origin + "/web5claims/",
+                );
+            }
         </script>
     </head>
     <body>
-        <div id="app">
-            <!-- Loading placeholder -->
-            <div
-                class="min-h-screen bg-base-200 flex items-center justify-center"
-            >
-                <div class="text-center">
-                    <div
-                        class="loading loading-spinner loading-lg text-primary mb-4"
-                    ></div>
-                    <p class="text-lg font-semibold">Loading Web5 Claims...</p>
-                    <p class="text-sm opacity-70">
-                        ZK Language Learning Certificates
-                    </p>
-                </div>
+        <div class="min-h-screen bg-base-200 flex items-center justify-center">
+            <div class="text-center">
+                <div
+                    class="loading loading-spinner loading-lg text-primary mb-4"
+                ></div>
+                <p class="text-lg font-semibold">Redirecting...</p>
+                <p class="text-sm opacity-70">
+                    Web5 Claims - ZK Language Learning Certificates
+                </p>
             </div>
         </div>
-
-        <!-- Error fallback -->
-        <noscript>
-            <div
-                class="min-h-screen bg-base-200 flex items-center justify-center"
-            >
-                <div class="card bg-base-100 shadow-xl max-w-md">
-                    <div class="card-body text-center">
-                        <h2 class="card-title justify-center text-error">
-                            JavaScript Required
-                        </h2>
-                        <p>
-                            This application requires JavaScript to be enabled
-                            in your browser.
-                        </p>
-                        <p class="text-sm opacity-70">
-                            Web5 Claims uses WebAssembly for zero-knowledge
-                            proofs.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </noscript>
     </body>
 </html>

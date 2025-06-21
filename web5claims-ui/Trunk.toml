@@ -1,6 +1,7 @@
 [build]
 target = "index.html"
 dist = "dist"
+# Use root path for development, will be overridden for production
 public_url = "/"
 
 [watch]
@@ -12,11 +13,11 @@ address = "127.0.0.1"
 port = 8080
 open = true
 
-# Fix the hooks - remove the problematic pre_build hook and fix post_build
+# GitHub Pages hooks (only used for production builds)
 [[hooks]]
 stage = "post_build"
 command = "sh"
 command_arguments = [
     "-c",
-    "if [ -f ./dist/index.html ]; then cp ./dist/index.html ./dist/404.html; fi",
+    "if [ -f ./dist/index.html ]; then cp ./dist/index.html ./dist/404.html && touch ./dist/.nojekyll; fi",
 ]

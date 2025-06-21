@@ -8,33 +8,6 @@
             content="Zero-knowledge verifiable credential system for language learning achievements, built for ZK Hack Berlin"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="author" content="Web5 Claims Team" />
-        <meta
-            name="keywords"
-            content="zero-knowledge, zk, language learning, certificates, blockchain, aleo"
-        />
-
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="website" />
-        <meta
-            property="og:title"
-            content="Web5 Claims - ZK Language Learning Certificates"
-        />
-        <meta
-            property="og:description"
-            content="Privacy-preserving certificate verification system for language learning achievements"
-        />
-
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta
-            property="twitter:title"
-            content="Web5 Claims - ZK Language Learning Certificates"
-        />
-        <meta
-            property="twitter:description"
-            content="Privacy-preserving certificate verification system for language learning achievements"
-        />
 
         <!-- Favicon -->
         <link
@@ -54,25 +27,19 @@
         <!-- Trunk will inject the WASM and JS here -->
         <link data-trunk rel="rust" data-wasm-opt="s" />
 
+        <!-- GitHub Pages SPA Routing Handler -->
         <script>
-            // Check if we have a saved route from 404.html
             (function () {
-                var redirectUrl = sessionStorage.getItem("spaRedirect");
-                if (redirectUrl) {
-                    // Clear the redirect data
-                    sessionStorage.removeItem("spaRedirect");
-
-                    // Only handle this if we're on the root path
-                    if (window.location.pathname === "/") {
-                        // Use history API to update the URL without reloading
-                        var url = new URL(redirectUrl, window.location.origin);
-                        window.history.replaceState(
-                            null,
-                            null,
-                            url.pathname + url.search + url.hash,
-                        );
-                        console.log("SPA route restored to:", redirectUrl);
-                    }
+                var redirect = sessionStorage.getItem("spaRedirect");
+                sessionStorage.removeItem("spaRedirect");
+                if (
+                    redirect &&
+                    redirect !==
+                        window.location.pathname +
+                            window.location.search +
+                            window.location.hash
+                ) {
+                    window.history.replaceState(null, null, redirect);
                 }
             })();
         </script>
