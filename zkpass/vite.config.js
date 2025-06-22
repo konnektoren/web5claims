@@ -1,18 +1,22 @@
 import { defineConfig } from "vite";
 
-export default defineConfig({
-  base: process.env.NODE_ENV === "production" ? "/web5claims/zkpass/" : "/",
-  build: {
-    outDir: "dist",
-    emptyOutDir: true,
-  },
-  server: {
-    port: 8000,
-    proxy: {
-      "/verify-age": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  const isProduction = mode === "production";
+
+  return {
+    base: isProduction ? "/zkpass/" : "/",
+    build: {
+      outDir: "dist",
+      emptyOutDir: true,
+      assetsDir: "assets",
+      rollupOptions: {
+        output: {
+          // Ensure consistent asset naming
+          assetFileNames: "assets/[name]-[hash][extname]",
+          chunkFileNames: "assets/[name]-[hash].js",
+          entryFileNames: "assets/[name]-[hash].js",
+        },
       },
     },
-  },
+  };
 });

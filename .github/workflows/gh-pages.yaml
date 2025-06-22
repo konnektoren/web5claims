@@ -64,7 +64,7 @@ jobs:
       - name: Build ZKPass for GitHub Pages
         run: |
           cd zkpass
-          npm run build:github-pages
+          NODE_ENV=production npm run build:github-pages
 
       - name: Create additional GitHub Pages files
         run: |
@@ -76,6 +76,15 @@ jobs:
           # Copy ZKPass build to subfolder
           mkdir -p zkpass
           cp -r ../../zkpass/dist/* zkpass/
+
+      - name: Debug ZKPass build
+        run: |
+          echo "=== ZKPass Build Debug ==="
+          ls -la web5claims-ui/dist/zkpass/
+          echo "=== Assets folder ==="
+          ls -la web5claims-ui/dist/zkpass/assets/ || echo "No assets folder"
+          echo "=== Index.html content ==="
+          head -20 web5claims-ui/dist/zkpass/index.html || echo "No index.html"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

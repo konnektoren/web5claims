@@ -4,10 +4,10 @@
   "description": "ZKPassport integration for Web5 Claims",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode development",
+    "build": "vite build --mode development",
     "preview": "vite preview",
-    "build:github-pages": "vite build --base=/web5claims/zkpass/"
+    "build:github-pages": "vite build --mode production"
   },
   "dependencies": {
     "@zkpassport/sdk": "^0.5.6",

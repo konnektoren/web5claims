@@ -37,6 +37,11 @@ build-ui-prod:
 build-zkpass-prod:
     @echo "🛂 Building ZKPass for production..."
     cd {{zkpass_dir}} && npm install && npm run build:github-pages
+    @echo "🔍 Checking ZKPass build output..."
+    @ls -la {{zkpass_dir}}/dist/ || echo "No dist folder"
+    @ls -la {{zkpass_dir}}/dist/assets/ || echo "No assets folder"
+    @echo "📄 Generated index.html:"
+    @head -10 {{zkpass_dir}}/dist/index.html || echo "No index.html"
 
 # Build the Yew UI for GitHub Pages with additional setup
 build-github-pages: build build-ui-prod build-zkpass-prod
@@ -49,6 +54,10 @@ build-github-pages: build build-ui-prod build-zkpass-prod
     mkdir -p {{ui_dir}}/dist/zkpass
     cp -r {{zkpass_dir}}/dist/* {{ui_dir}}/dist/zkpass/
     @echo "✅ ZKPass integrated into GitHub Pages build"
+    @echo "🔍 Checking ZKPass assets..."
+    @ls -la {{ui_dir}}/dist/zkpass/assets/ || echo "No assets folder found"
+    @echo "📄 ZKPass index.html content:"
+    @head -20 {{ui_dir}}/dist/zkpass/index.html || echo "No index.html found"
 
 # Preview production build locally (updated command)
 preview-prod: build-github-pages
