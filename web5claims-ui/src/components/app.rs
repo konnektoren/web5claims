@@ -1,7 +1,7 @@
 use crate::components::layout::PageLayout;
 use crate::pages::{
     CertificateLookupPage, HomePage, IssuerPage, NotFoundPage, VerifierPage, VerifyProofPage,
-    ZkPassportPage,
+    ZkPassRedirectPage, ZkPassportPage,
 };
 use crate::router::Route;
 use yew::prelude::*;
@@ -77,6 +77,11 @@ fn switch(route: Route) -> Html {
         Route::ZkPassport => {
             log::info!("Rendering ZkPassportPage");
             html! { <ZkPassportPage /> }
+        }
+        // Add this new route handler
+        Route::ZkPass => {
+            log::info!("Redirecting to ZKPass external app");
+            html! { <ZkPassRedirectPage /> }
         }
         Route::NotFound => {
             log::info!("Rendering NotFoundPage");

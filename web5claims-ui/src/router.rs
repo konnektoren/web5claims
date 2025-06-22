@@ -13,8 +13,10 @@ pub enum Route {
     Verifier,
     #[at("/verify")]
     VerifyProof,
-    #[at("/zkpassport")] // Add this
+    #[at("/zkpassport")]
     ZkPassport,
+    #[at("/zkpass")]
+    ZkPass,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -28,7 +30,8 @@ impl std::fmt::Display for Route {
             Route::CertificateLookup => write!(f, "/lookup"),
             Route::Verifier => write!(f, "/verifier"),
             Route::VerifyProof => write!(f, "/verify"),
-            Route::ZkPassport => write!(f, "/zkpassport"), // Add this
+            Route::ZkPassport => write!(f, "/zkpassport"),
+            Route::ZkPass => write!(f, "/zkpass"),
             Route::NotFound => write!(f, "/404"),
         }
     }
@@ -42,7 +45,8 @@ impl Route {
             Route::CertificateLookup => "Certificate Lookup - Web5 Claims",
             Route::Verifier => "Proof Verifier - Web5 Claims",
             Route::VerifyProof => "Verify Proof - Web5 Claims",
-            Route::ZkPassport => "ZK Passport - Web5 Claims", // Add this
+            Route::ZkPassport => "ZK Passport - Web5 Claims",
+            Route::ZkPass => "ZK Identity Verification - Web5 Claims",
             Route::NotFound => "Page Not Found - Web5 Claims",
         }
     }
@@ -58,8 +62,19 @@ impl Route {
             }
             Route::Verifier => "Verify zero-knowledge proofs without revealing private data",
             Route::VerifyProof => "Verifying a zero-knowledge proof link",
-            Route::ZkPassport => "Identity verification using ZK Passport technology", // Add this
+            Route::ZkPassport => "Identity verification using ZK Passport technology",
+            Route::ZkPass => "Advanced identity verification using ZKPass passport scanning",
             Route::NotFound => "The requested page could not be found",
+        }
+    }
+
+    // Add helper methods for ZKPass integration
+    pub fn zkpass_external_url() -> String {
+        // In production, this will be the GitHub Pages URL
+        if cfg!(debug_assertions) {
+            "http://localhost:8000/".to_string()
+        } else {
+            "/zkpass/".to_string()
         }
     }
 }

@@ -66,6 +66,11 @@ pub fn header() -> Html {
                                     </button>
                                 </li>
                             }
+                            <li>
+                                <a href={Route::zkpass_external_url()} target="_blank">
+                                    {"🛂 ZKPass"}
+                                </a>
+                            </li>
                         </ul>
                     </div>
 
@@ -131,6 +136,16 @@ pub fn header() -> Html {
                                 </button>
                             </li>
                         }
+                        <li>
+                            <a
+                                href={Route::zkpass_external_url()}
+                                target="_blank"
+                                class="btn btn-ghost"
+                                title="Advanced identity verification with passport scanning"
+                            >
+                                {"🛂 ZKPass"}
+                            </a>
+                        </li>
                     </ul>
                 </div>
 

@@ -5,6 +5,7 @@ use crate::components::{
     ui::Card,
     wallet::{AleoWallet, WalletInfo, ZkPassportWallet}, // Add ZkPassportWallet import
 };
+use crate::router::Route;
 use crate::services::zkpassport_service::{PassportData, ZkPassportProof}; // Add these imports
 use crate::types::AppState;
 use yew::prelude::*;
@@ -81,57 +82,52 @@ pub fn issuer_page() -> Html {
             </Card>
 
             // ZK Passport Section - NEW!
-            <Card title="🛂 ZK Passport Identity Verification">
+            <Card title="🛂 Identity Verification Options">
                 <div class="space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        // Existing ZK Passport Wallet
+                        <div class="card bg-base-200 p-4">
+                            <h4 class="font-semibold mb-2">{"📱 ZK Passport SDK"}</h4>
+                            <p class="text-sm text-base-content/70 mb-3">
+                                {"Basic identity verification integrated into the app"}
+                            </p>
+                            <ZkPassportWallet
+                                on_passport_scanned={on_passport_scanned}
+                                on_proof_generated={on_zkpassport_proof}
+                                on_error={on_zkpassport_error}
+                            />
+                        </div>
+
+                        // New ZKPass External App
+                        <div class="card bg-base-200 p-4">
+                            <h4 class="font-semibold mb-2">{"🛂 ZKPass Advanced"}</h4>
+                            <p class="text-sm text-base-content/70 mb-3">
+                                {"Full-featured passport scanning with enhanced privacy"}
+                            </p>
+                            <a
+                                href={Route::zkpass_external_url()}
+                                target="_blank"
+                                class="btn btn-primary btn-sm w-full"
+                            >
+                                {"🚀 Launch ZKPass"}
+                            </a>
+                            <p class="text-xs text-base-content/60 mt-2">
+                                {"Opens in new tab with advanced verification features"}
+                            </p>
+                        </div>
+                    </div>
+
                     <div class="alert alert-info">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <div>
-                            <div class="font-semibold">{"Enhanced Identity Verification"}</div>
-                            <div class="text-sm">{"Use ZK Passport to verify your identity without revealing personal information"}</div>
+                            <div class="font-semibold">{"Choose Your Verification Method"}</div>
+                            <div class="text-sm">
+                                {"Use the integrated ZK Passport for basic verification, or ZKPass for advanced passport scanning with enhanced privacy features."}
+                            </div>
                         </div>
                     </div>
-
-                    <ZkPassportWallet
-                        on_passport_scanned={on_passport_scanned}
-                        on_proof_generated={on_zkpassport_proof}
-                        on_error={on_zkpassport_error}
-                    />
-
-                    // Show passport data if available
-                    {if let Some(data) = &*passport_data {
-                        html! {
-                            <div class="alert alert-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <div class="font-semibold">{"Identity Verified"}</div>
-                                    <div class="text-sm">{format!("Nationality: {} | Age 18+: {}", data.nationality, if data.age_over_18 { "Yes" } else { "No" })}</div>
-                                </div>
-                            </div>
-                        }
-                    } else {
-                        html! { <></> }
-                    }}
-
-                    // Show ZK proof status if available
-                    {if let Some(_proof) = &*zkpassport_proof {
-                        html! {
-                            <div class="alert alert-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <div class="font-semibold">{"ZK Identity Proof Ready"}</div>
-                                    <div class="text-sm">{"Your identity proof can be used to enhance certificate credibility"}</div>
-                                </div>
-                            </div>
-                        }
-                    } else {
-                        html! { <></> }
-                    }}
                 </div>
             </Card>
 

@@ -68,10 +68,30 @@ pub fn home_page() -> Html {
                                     </div>
                                 </div>
                             </div>
+
+                            // ZKPass Card
+                            <div class="card bg-base-100 shadow-xl">
+                                <div class="card-body">
+                                    <div class="text-4xl mb-4">{"🛂"}</div>
+                                    <h2 class="card-title justify-center text-xl">{"ZKPass Identity"}</h2>
+                                    <p class="text-base-content/70 mb-4">
+                                        {"Advanced identity verification using passport scanning and zero-knowledge proofs."}
+                                    </p>
+                                    <div class="card-actions justify-center">
+                                        <a
+                                            href={Route::zkpass_external_url()}
+                                            target="_blank"
+                                            class="btn btn-accent btn-lg"
+                                        >
+                                            {"Verify Identity"}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         // Features Section
-                        <div class="grid md:grid-cols-3 gap-4 text-sm">
+                        <div class="grid md:grid-cols-4 gap-4 text-sm">
                             <div class="bg-base-100 p-4 rounded-lg">
                                 <div class="text-2xl mb-2">{"🌍"}</div>
                                 <h3 class="font-semibold">{"Language Proficiency"}</h3>
@@ -81,6 +101,11 @@ pub fn home_page() -> Html {
                                 <div class="text-2xl mb-2">{"📊"}</div>
                                 <h3 class="font-semibold">{"Performance Threshold"}</h3>
                                 <p class="text-base-content/70">{"Verify achievements above thresholds privately"}</p>
+                            </div>
+                            <div class="bg-base-100 p-4 rounded-lg">
+                                <div class="text-2xl mb-2">{"🛂"}</div>
+                                <h3 class="font-semibold">{"Identity Verification"}</h3>
+                                <p class="text-base-content/70">{"Passport-based identity proofs with ZKPass"}</p>
                             </div>
                             <div class="bg-base-100 p-4 rounded-lg">
                                 <div class="text-2xl mb-2">{"⛓️"}</div>

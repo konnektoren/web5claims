@@ -27,27 +27,149 @@
         />
         <script src="https://cdn.tailwindcss.com"></script>
 
+        <!-- ZK Passport SDK from esm.sh -->
+        <script type="module">
+            // Load ZK Passport SDK from esm.sh
+            try {
+                const zkPassportModule = await import(
+                    "https://esm.sh/@zkpassport/sdk@latest"
+                );
+
+                // Make the SDK available globally
+                window.ZKPassport =
+                    zkPassportModule.default || zkPassportModule;
+
+                console.log("ZK Passport SDK loaded successfully from esm.sh");
+
+                // Dispatch a custom event to notify that the SDK is ready
+                window.dispatchEvent(new CustomEvent("zkpassport-ready"));
+            } catch (error) {
+                console.warn(
+                    "Failed to load ZK Passport SDK from esm.sh:",
+                    error,
+                );
+                console.log("Using mock ZK Passport SDK for demo purposes");
+
+                // Fallback to mock implementation
+                window.ZKPassport = {
+                    initialize: function () {
+                        console.log("ZK Passport SDK initialized (mock)");
+                        return Promise.resolve();
+                    },
+
+                    scanPassport: function () {
+                        console.log("Scanning passport (mock)");
+                        // Simulate realistic passport scanning delay
+                        return new Promise((resolve) => {
+                            setTimeout(() => {
+                                resolve({
+                                    nationality: "German",
+                                    age_over_18: true,
+                                    expiry_date: "2030-12-31",
+                                    document_type: "Passport",
+                                    // Additional realistic fields
+                                    document_number:
+                                        "P" +
+                                        Math.random()
+                                            .toString()
+                                            .substring(2, 10),
+                                    issuing_country: "DEU",
+                                    birth_date: "1990-01-01",
+                                    gender: "M",
+                                });
+                            }, 2000); // 2 second delay to simulate real scanning
+                        });
+                    },
+
+                    generateProof: function (request) {
+                        console.log("Generating ZK proof (mock)", request);
+                        // Simulate proof generation delay
+                        return new Promise((resolve) => {
+                            setTimeout(() => {
+                                resolve({
+                                    proof:
+                                        "0x" +
+                                        Array.from({ length: 512 }, () =>
+                                            Math.floor(
+                                                Math.random() * 16,
+                                            ).toString(16),
+                                        ).join(""),
+                                    public_signals: [
+                                        "0x" +
+                                            Math.random()
+                                                .toString(16)
+                                                .substring(2, 18),
+                                        "0x" +
+                                            Math.random()
+                                                .toString(16)
+                                                .substring(2, 18),
+                                        "0x" +
+                                            Math.random()
+                                                .toString(16)
+                                                .substring(2, 18),
+                                    ],
+                                    verification_key:
+                                        "0x" +
+                                        Array.from({ length: 256 }, () =>
+                                            Math.floor(
+                                                Math.random() * 16,
+                                            ).toString(16),
+                                        ).join(""),
+                                    // Additional metadata
+                                    circuit_id: "passport_identity_v1",
+                                    proof_type:
+                                        request.claimType ||
+                                        "identity_verification",
+                                    timestamp: Date.now(),
+                                });
+                            }, 3000); // 3 second delay to simulate real proof generation
+                        });
+                    },
+
+                    verifyProof: function (proof) {
+                        console.log("Verifying ZK proof (mock)", proof);
+                        // Simulate verification delay
+                        return new Promise((resolve) => {
+                            setTimeout(() => {
+                                // Randomly simulate success/failure for more realistic testing
+                                const isValid = Math.random() > 0.1; // 90% success rate
+                                console.log(
+                                    "Proof verification result (mock):",
+                                    isValid,
+                                );
+                                resolve(isValid);
+                            }, 1500); // 1.5 second delay
+                        });
+                    },
+
+                    // Additional mock methods that might be in the real SDK
+                    getVersion: function () {
+                        return "1.0.0-mock";
+                    },
+
+                    getSupportedCountries: function () {
+                        return Promise.resolve([
+                            "DEU",
+                            "USA",
+                            "GBR",
+                            "FRA",
+                            "ITA",
+                            "ESP",
+                            "NLD",
+                            "BEL",
+                            "AUT",
+                            "CHE",
+                        ]);
+                    },
+                };
+
+                // Dispatch the ready event even for mock
+                window.dispatchEvent(new CustomEvent("zkpassport-ready"));
+            }
+        </script>
+
         <!-- Trunk will inject the WASM and JS here -->
         <link data-trunk rel="rust" data-wasm-opt="s" />
-
-        <script
-            src="https://unpkg.com/@zkpassport/sdk@latest/dist/zkpassport.min.js"
-            onerror="console.warn('Failed to load ZK Passport SDK, using mock instead'); window.ZKPassport = {
-                initialize: () => Promise.resolve(),
-                scanPassport: () => Promise.resolve({
-                    nationality: 'German',
-                    age_over_18: true,
-                    expiry_date: '2030-12-31',
-                    document_type: 'Passport'
-                }),
-                generateProof: () => Promise.resolve({
-                    proof: 'mock_proof_' + Math.random().toString(36).substr(2, 9),
-                    public_signals: ['signal1', 'signal2'],
-                    verification_key: 'mock_vk_' + Math.random().toString(36).substr(2, 9)
-                }),
-                verifyProof: () => Promise.resolve(true)
-            };"
-        ></script>
 
         <!-- GitHub Pages SPA Routing Handler -->
         <script>
