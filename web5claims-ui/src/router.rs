@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use web_sys::window;
 use yew_router::prelude::*;
 
 #[derive(Clone, Debug, Routable, PartialEq, Serialize, Deserialize)]
@@ -68,9 +69,31 @@ impl Route {
         }
     }
 
-    // Add helper methods for ZKPass integration
+    pub fn get_url_params() -> std::collections::HashMap<String, String> {
+        let mut params = std::collections::HashMap::new();
+
+        if let Some(window) = window() {
+            if let Some(location) = window.location().search().ok() {
+                if !location.is_empty() {
+                    let query = location.trim_start_matches('?');
+                    for pair in query.split('&') {
+                        let mut parts = pair.split('=');
+                        if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+                            if let (Ok(decoded_key), Ok(decoded_value)) =
+                                (urlencoding::decode(key), urlencoding::decode(value))
+                            {
+                                params.insert(decoded_key.to_string(), decoded_value.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        params
+    }
+
     pub fn zkpass_external_url() -> String {
-        // In production, this will be the GitHub Pages URL
         if cfg!(debug_assertions) {
             "http://localhost:8000/".to_string()
         } else {

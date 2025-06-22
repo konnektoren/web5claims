@@ -16,37 +16,23 @@
             <header>
                 <h1>🛂 ZKPassport Identity Verification</h1>
                 <p class="subtitle">
-                    Prove your identity without revealing personal information
+                    Verify your age (18+) and name for enhanced certificate
+                    credibility
                 </p>
                 <div class="badge">Powered by Web5 Claims</div>
             </header>
 
             <main>
                 <div class="verification-section">
-                    <div class="verification-options">
-                        <h3>Choose Verification Type</h3>
-                        <div class="button-grid">
-                            <button
-                                id="verifyAgeBtn"
-                                class="verify-button age-verify"
-                            >
-                                🔐 Verify Age (18+)
-                            </button>
-
-                            <button
-                                id="verifyNameBtn"
-                                class="verify-button name-verify"
-                            >
-                                👤 Verify First Name
-                            </button>
-
-                            <button
-                                id="verifyBothBtn"
-                                class="verify-button both-verify"
-                            >
-                                🔒 Verify Age + Name
-                            </button>
-                        </div>
+                    <div class="verification-start">
+                        <button id="verifyBtn" class="verify-button">
+                            🔒 Verify Identity (Age + Name)
+                        </button>
+                        <p class="verify-description">
+                            This will verify both your age (18+) and first name
+                            using your passport, without revealing any other
+                            personal information.
+                        </p>
                     </div>
 
                     <div
@@ -81,6 +67,60 @@
                         </p>
                     </div>
 
+                    <div id="success-actions" class="success-actions hidden">
+                        <div class="success-content">
+                            <h3 id="success-title">🎉 Identity Verified!</h3>
+                            <pre
+                                id="success-summary"
+                                class="success-summary"
+                            ></pre>
+
+                            <div class="action-buttons">
+                                <button
+                                    id="issuer-btn"
+                                    class="action-btn primary"
+                                >
+                                    📜 Issue Certificate
+                                </button>
+
+                                <button
+                                    id="verifier-btn"
+                                    class="action-btn secondary"
+                                >
+                                    ✅ Test Verifier
+                                </button>
+
+                                <button
+                                    id="new-verification-btn"
+                                    class="action-btn outline"
+                                >
+                                    🔄 New Verification
+                                </button>
+                            </div>
+
+                            <div class="next-steps">
+                                <h4>What's Next?</h4>
+                                <ul>
+                                    <li>
+                                        <strong>Issue Certificate:</strong>
+                                        Create a language learning certificate
+                                        with your verified identity
+                                    </li>
+                                    <li>
+                                        <strong>Test Verifier:</strong> See how
+                                        certificates are verified by employers
+                                        or institutions
+                                    </li>
+                                    <li>
+                                        <strong>Privacy Protected:</strong> Your
+                                        personal information remains private
+                                        with zero-knowledge proofs
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="status" class="status"></div>
                 </div>
 
@@ -90,10 +130,10 @@
                         <div class="step">
                             <span class="step-number">1</span>
                             <div>
-                                <strong>Choose Verification</strong>
+                                <strong>Enter Name</strong>
                                 <p>
-                                    Select age verification, name verification,
-                                    or both
+                                    Enter your first name as it appears on your
+                                    passport
                                 </p>
                             </div>
                         </div>
@@ -113,46 +153,47 @@
                                 <strong>Generate Proof</strong>
                                 <p>
                                     Your device creates a zero-knowledge proof
+                                    of your age (18+) and name
                                 </p>
                             </div>
                         </div>
                         <div class="step">
                             <span class="step-number">4</span>
                             <div>
-                                <strong>Verify</strong>
+                                <strong>Issue Certificate</strong>
                                 <p>
-                                    Proof is verified without revealing personal
-                                    data
+                                    Create your language certificate with
+                                    verified identity
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="verification-types">
-                        <h4>Verification Options</h4>
-                        <div class="type-grid">
-                            <div class="verification-type">
-                                <div class="type-icon">🔐</div>
+                    <div class="verification-benefits">
+                        <h4>Verification Benefits</h4>
+                        <div class="benefit-grid">
+                            <div class="benefit-item">
+                                <div class="benefit-icon">🔐</div>
                                 <strong>Age Verification</strong>
                                 <p>
-                                    Prove you are 18+ without revealing exact
+                                    Proves you are 18+ without revealing exact
                                     age
                                 </p>
                             </div>
-                            <div class="verification-type">
-                                <div class="type-icon">👤</div>
-                                <strong>Name Verification</strong>
+                            <div class="benefit-item">
+                                <div class="benefit-icon">👤</div>
+                                <strong>Identity Verification</strong>
                                 <p>
-                                    Verify first name matches passport without
+                                    Verifies first name matches passport without
                                     revealing surname
                                 </p>
                             </div>
-                            <div class="verification-type">
-                                <div class="type-icon">🔒</div>
-                                <strong>Combined Verification</strong>
+                            <div class="benefit-item">
+                                <div class="benefit-icon">🏆</div>
+                                <strong>Enhanced Credibility</strong>
                                 <p>
-                                    Verify both age and name for enhanced
-                                    credibility
+                                    Certificates issued with verified identity
+                                    have higher trust
                                 </p>
                             </div>
                         </div>
