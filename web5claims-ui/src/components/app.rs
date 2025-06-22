@@ -4,16 +4,61 @@ use crate::pages::{
     ZkPassRedirectPage, ZkPassportPage,
 };
 use crate::router::Route;
+use web_sys::window;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
 #[function_component(App)]
 pub fn app() -> Html {
+    // Check for legacy query parameter routing
+    let legacy_route = use_state(|| None::<Route>);
+
+    use_effect_with((), {
+        let legacy_route = legacy_route.clone();
+        move |_| {
+            if let Some(window) = window() {
+                if let Ok(search) = window.location().search() {
+                    if let Some(page_param) = extract_page_param(&search) {
+                        let route = match page_param.as_str() {
+                            "issuer" => Some(Route::Issuer),
+                            "verifier" => Some(Route::Verifier),
+                            "lookup" => Some(Route::CertificateLookup),
+                            "verify" => Some(Route::VerifyProof),
+                            "zkpassport" => Some(Route::ZkPassport),
+                            _ => None,
+                        };
+                        legacy_route.set(route);
+                    }
+                }
+            }
+        }
+    });
+
+    // If we have a legacy route, render it directly
+    if let Some(route) = (*legacy_route).clone() {
+        return switch(route);
+    }
+
     html! {
         <BrowserRouter>
             <Switch<Route> render={switch} />
         </BrowserRouter>
     }
+}
+
+fn extract_page_param(search: &str) -> Option<String> {
+    if search.starts_with('?') {
+        let query = &search[1..];
+        for pair in query.split('&') {
+            let mut parts = pair.split('=');
+            if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+                if key == "page" {
+                    return Some(value.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 fn switch(route: Route) -> Html {
@@ -78,7 +123,6 @@ fn switch(route: Route) -> Html {
             log::info!("Rendering ZkPassportPage");
             html! { <ZkPassportPage /> }
         }
-        // Add this new route handler
         Route::ZkPass => {
             log::info!("Redirecting to ZKPass external app");
             html! { <ZkPassRedirectPage /> }
