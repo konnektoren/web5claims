@@ -1,15 +1,52 @@
 @startuml web5claims-detailed-flow
 !theme cerulean-outline
 
-title Web5 Claims - Detailed ZK Language Learning Certificate Flow\n**ZK Hack Berlin 2024**
+title Web5 Claims - Enhanced ZK Language Learning Certificate Flow with Identity Verification\n**ZK Hack Berlin 2024**
 
 actor "👨‍🎓\nLanguage Learner" as learner
+participant "🛂\nZKPassport\nIdentity Verification" as zkpass
 participant "🎮\nKonnektoren\nLearning Platform" as konnektoren
 participant "🌐\nWeb5 Claims UI\n(Yew Frontend)" as ui
-participant "🔐\nCertificate Issuer\n(Rust Backend)" as issuer
-participant "✅\nZK Proof Verifier\n(Rust Backend)" as verifier
+participant "🔐\nEnhanced Certificate Issuer\n(Rust Backend)" as issuer
+participant "✅\nEnhanced ZK Proof Verifier\n(Rust Backend)" as verifier
 participant "⚙️\nAleo Platform\n(ZK Circuits)" as aleo
 participant "🏢\nEmployer/University\n(Relying Party)" as employer
+
+== 🛂 Optional Identity Verification ==
+learner -> zkpass: Visit /zkpass/ for Identity Verification
+activate zkpass
+
+zkpass -> learner: Request First Name Input
+learner -> zkpass: Enter "John"
+
+zkpass -> zkpass: Generate ZKPassport Request
+note right
+**ZKPassport Query:**
+```javascript
+queryBuilder
+  .gte("age", 18)        // Age ≥ 18 proof
+  .disclose("firstname") // Name verification
+  .done()
+```
+**Privacy:** Proves 18+ without revealing exact age
+end note
+
+zkpass -> learner: Display QR Code
+learner -> zkpass: Scan with ZKPassport Mobile App
+zkpass -> zkpass: Generate ZK Identity Proof
+
+zkpass -> zkpass: Verify Results
+note right
+**Identity Verification:**
+• Age: 18+ ✅ (actual age hidden)
+• Name: "John" ✅ (surname hidden)
+• Verification Type: "identity"
+• Timestamp: 2024-01-15T09:00:00Z
+end note
+
+zkpass -> learner: ✅ "Identity Verified!"
+zkpass -> ui: Redirect to /issuer?verified_name=John&verified_age=true
+deactivate zkpass
 
 == 🎓 Learning & Certificate Generation ==
 learner -> konnektoren: Complete German B2 Course
@@ -22,7 +59,7 @@ note right
 • total_challenges: 50
 • solved_challenges: 47
 • performance_percentage: 94
-• profile_name: "Language Learner"
+• profile_name: "John" (from identity verification)
 • date: 2024-01-15T10:30:00Z
 • signature: Ed25519 signature
 end note
@@ -31,163 +68,230 @@ konnektoren -> konnektoren: Sign Certificate with Ed25519
 konnektoren -> learner: Issue Signed Certificate
 deactivate konnektoren
 
-== 🌐 Web5 Claims UI Interaction ==
-learner -> ui: Open Web5 Claims App
+== 🌐 Enhanced Web5 Claims UI Interaction ==
+learner -> ui: Open Web5 Claims App (with verified identity)
 activate ui
 
-ui -> learner: Show Certificate Form
-learner -> ui: Input Certificate Data
-ui -> ui: Validate Form & Preview Performance
+ui -> ui: Parse URL Parameters (verified_name, verified_age)
+ui -> learner: Show Pre-filled Certificate Form
+note right
+**Enhanced UI with Identity:**
+• Name field: Pre-filled with "John" ✅
+• Identity Badge: "Verified Identity" 🛂
+• Trust Score: Higher credibility
+• Certificate Type: "Identity-Verified Certificate"
+end note
 
-learner -> ui: Click "🎓 Generate Certificate"
-ui -> ui: Create CertificateData Object
-ui -> learner: Display Certificate Image & Stats
+learner -> ui: Input Certificate Data (enhanced with identity)
+ui -> ui: Validate Form & Preview with Identity Badge
 
-== 🔐 ZK Proof Generation ==
-learner -> ui: Click "🚀 Generate Aleo ZK Proof"
-ui -> issuer: Create ProofRequest
+learner -> ui: Click "🎓 Generate Identity-Verified Certificate"
+ui -> ui: Create Enhanced CertificateData Object
+ui -> learner: Display Certificate with Identity Verification Badge
+
+== 🔐 Enhanced ZK Proof Generation ==
+learner -> ui: Click "🚀 Generate Enhanced Aleo ZK Proof"
+ui -> issuer: Create Enhanced ProofRequest
 activate issuer
 
 note over issuer
-**ProofRequest:**
+**Enhanced ProofRequest:**
 • certificate: CertificateData
-• claim_type: LanguageProficiency {
+• claim_type: Combined {
     language: "German",
-    min_level: CefrLevel::B2
+    min_level: CefrLevel::B2,
+    identity_verified: true
   }
 • target_platform: "aleo"
-• options: ProofOptions::default()
+• verified_identity: VerifiedIdentity {
+    first_name: "John",
+    age_verified: true,
+    name_verified: true,
+    verification_timestamp: "2024-01-15T09:00:00Z"
+  }
 end note
 
-issuer -> issuer: Validate Certificate
-issuer -> issuer: Extract Language & CEFR Level
-issuer -> issuer: Check: cert_level >= min_level
-issuer -> issuer: Generate Certificate Hash
+issuer -> issuer: Validate Certificate + Identity
+issuer -> issuer: Generate Enhanced Certificate Hash
+issuer -> issuer: Create Identity Commitment
 
-issuer -> aleo: Generate ZK Proof
+issuer -> aleo: Generate Enhanced ZK Proof
 activate aleo
 
 note over aleo
-**Aleo ZK Circuit: language_proficiency_v1**
+**Enhanced Aleo ZK Circuit: identity_verified_language_v1**
 ```
-transition verify_language_skill(
-    private cert_level: u8,       // 4 (B2)
-    private performance: u8,      // 94
-    private student_hash: field,  // SHA256(profile)
-    public min_level: u8,         // 4 (B2)
-    public language: field,       // hash("German")
-) -> bool {
-    return cert_level >= min_level;
+transition verify_identity_language_skill(
+    private cert_level: u8,           // 4 (B2)
+    private performance: u8,          // 94
+    private student_hash: field,      // SHA256(profile)
+    private identity_verified: bool,  // true
+    private age_proof_hash: field,    // ZKPassport age proof
+    private name_proof_hash: field,   // ZKPassport name proof
+    public min_level: u8,             // 4 (B2)
+    public language: field,           // hash("German")
+    public requires_identity: bool,   // true
+) -> (bool, u8) {
+    let skill_valid = cert_level >= min_level;
+    let identity_valid = identity_verified;
+    let trust_score = if identity_valid { 95u8 } else { 75u8 };
+    return (skill_valid && identity_valid, trust_score);
 }
 ```
-**Proves:** Has German B2+ without revealing exact level/score
+**Enhanced Proof:** Language skill + Identity verification + Trust score
 end note
 
-aleo -> aleo: Execute ZK Circuit
-aleo -> issuer: Return ZK Proof Bytes
+aleo -> aleo: Execute Enhanced ZK Circuit
+aleo -> issuer: Return Enhanced ZK Proof Bytes
 deactivate aleo
 
-issuer -> issuer: Create ZkProofClaim
+issuer -> issuer: Create Enhanced ZkProofClaim
 note right
-**ZkProofClaim:**
+**Enhanced ZkProofClaim:**
 • proof_id: UUID
-• claim_type: LanguageProficiency
+• claim_type: Combined (Language + Identity)
 • public_inputs: {
     "min_level": "B2",
     "language": "German",
+    "identity_verified": true,
     "verification_result": true,
-    "certificate_hash": "sha256..."
+    "trust_score": 95,
+    "certificate_hash": "sha256...",
+    "identity_hash": "sha256(identity_data)"
   }
 • proof_data: {
-    "proof_bytes": [ZK proof],
-    "circuit_id": "language_proficiency_v1",
+    "proof_bytes": [Enhanced ZK proof],
+    "circuit_id": "identity_verified_language_v1",
     "vk_hash": "verification_key_hash"
   }
-• metadata: {
-    "platform": "aleo",
-    "issuer_id": "web5_claims_issuer"
-  }
+• identity_verification: VerifiedIdentity
 end note
 
-issuer -> ui: Return ZkProofClaim
+issuer -> ui: Return Enhanced ZkProofClaim
 deactivate issuer
 
-ui -> learner: ✅ "ZK Proof Generated Successfully!"
+ui -> learner: ✅ "Enhanced ZK Proof Generated!\n🛂 Identity Verified + 🎓 Language Skill"
 deactivate ui
 
-== 💼 Employment Verification Scenario ==
-learner -> employer: "I have German B2+ proficiency"
+== 💼 Enhanced Employment Verification Scenario ==
+learner -> employer: "I have verified German B2+ proficiency with identity"
 employer -> learner: "Please provide verifiable proof"
 
-learner -> employer: Submit ZK Proof (JSON/Base64)
-employer -> verifier: Verify ZK Proof
+learner -> employer: Submit Enhanced ZK Proof (JSON/Base64)
+employer -> verifier: Verify Enhanced ZK Proof
 activate verifier
 
-verifier -> verifier: Check Proof Integrity
-verifier -> verifier: Validate Platform Support
-verifier -> verifier: Verify Circuit Trust
+verifier -> verifier: Check Enhanced Proof Integrity
+verifier -> verifier: Validate Identity Claims
+verifier -> verifier: Check Circuit Trust & Identity Support
 note right
-**Trusted Circuits:**
+**Enhanced Trusted Circuits:**
+• identity_verified_language_v1 ✅ (NEW)
 • language_proficiency_v1 ✅
 • performance_threshold_v1 ✅
 • completion_date_v1 ✅
 • combined_criteria_v1 ✅
 end note
 
-verifier -> aleo: Verify Proof On-Chain
+verifier -> aleo: Verify Enhanced Proof On-Chain
 activate aleo
-aleo -> aleo: Run Verification Algorithm
-aleo -> verifier: ✅ Proof Valid
+aleo -> aleo: Run Enhanced Verification Algorithm
+aleo -> verifier: ✅ Enhanced Proof Valid + Trust Score: 95
 deactivate aleo
 
-verifier -> verifier: Create VerificationResult
+verifier -> verifier: Create Enhanced VerificationResult
 note right
-**VerificationResult:**
+**Enhanced VerificationResult:**
 • is_valid: true
 • requirements_met: true
+• identity_verified: true ✅
+• trust_score: 95 (vs 75 for non-identity)
 • details: {
     "platform": "aleo",
-    "circuit_id": "language_proficiency_v1",
+    "circuit_id": "identity_verified_language_v1",
     "verified_at": "2024-01-15T11:00:00Z",
+    "identity_verification": {
+      "age_verified": true,
+      "name_verified": true,
+      "verification_timestamp": "2024-01-15T09:00:00Z"
+    },
     "verified_inputs": {
       "min_level": "B2",
-      "language": "German"
+      "language": "German",
+      "identity_verified": true
     }
   }
 • warnings: []
 end note
 
-verifier -> employer: Return VerificationResult
+verifier -> employer: Return Enhanced VerificationResult
 deactivate verifier
 
-employer -> employer: Process Verification
-employer -> learner: ✅ "German B2+ Competency Verified!"
+employer -> employer: Process Enhanced Verification
+employer -> learner: ✅ "German B2+ Competency + Identity Verified!\n🏆 High Trust Score: 95/100"
 
-== 📊 Privacy Comparison ==
+== 📊 Enhanced Privacy Comparison ==
 note over learner, employer
 **🔐 What was PROVEN (Public):**
 ✅ Has German language certification
 ✅ Achieved B2 level or higher
 ✅ Certificate issued after Jan 2023
 ✅ Valid cryptographic signature
+✅ Identity verified (age 18+, first name matches)
+✅ High trust score (95/100)
 
 **❌ What was HIDDEN (Private):**
 ❌ Exact CEFR level (could be B2, C1, or C2)
 ❌ Exact performance score (94%)
 ❌ Number of challenges completed (47/50)
-❌ Student's real name
-❌ Exact completion date
+❌ Exact age (only proven ≥18)
+❌ Surname/last name
+❌ Passport details
 ❌ Institution details
+❌ Exact completion date
+
+**🛂 ZKPassport Privacy Benefits:**
+• Age verification without revealing exact age
+• Name verification without exposing surname
+• No passport data stored or transmitted
+• Enhanced certificate credibility
+• Higher employer confidence
 end note
 
-== 🏆 ZK Hack Berlin Prize Tracks ==
+== 🏆 Enhanced ZK Hack Berlin Prize Tracks ==
 note over ui, aleo
-**🏆 Prize Track Alignment:**
-🥇 **Aleo ($5K)**: Native Aleo ZK circuits for education
-🏗️ **Arbitrum Stylus ($1K)**: Rust ZK verifier deployment
-🔐 **ZKPassport ($1K)**: Private identity verification
-👥 **Xion ($3K)**: Consumer-friendly ZK UX
-🏆 **Main Prize ($9K)**: Novel ZK education application
+**🏆 Enhanced Prize Track Alignment:**
+🥇 **Aleo ($5K)**: Enhanced native Aleo ZK circuits for education + identity
+🏗️ **Arbitrum Stylus ($1K)**: Rust ZK verifier with identity support
+🔐 **ZKPassport ($1K)**: ✅ COMPLETE - Private identity verification integration
+👥 **Xion ($3K)**: Consumer-friendly ZK UX with seamless identity flow
+🏆 **Main Prize ($9K)**: Novel ZK education + identity application
+
+**✅ ZKPassport Integration Highlights:**
+• Age verification (18+) without revealing exact age
+• First name verification without exposing surname
+• Seamless redirect flow: /zkpass/ → /issuer
+• Enhanced trust scores for verified certificates
+• Privacy-preserving identity enhancement
+• Real-world employment verification scenarios
+end note
+
+== 🔄 Alternative Flows ==
+note over learner, employer
+**🔄 Flow Variations:**
+
+**1. Standard Certificate (No Identity):**
+Learner → Konnektoren → UI → Issuer → Aleo
+Trust Score: 75/100
+
+**2. Identity-First Flow:**
+Learner → ZKPassport → UI (pre-filled) → Issuer → Enhanced Aleo
+Trust Score: 95/100
+
+**3. Employer Requirements:**
+- Basic verification: Standard certificate accepted
+- High-security roles: Identity verification required
+- Automatic trust score filtering by employers
 end note
 
 @enduml
