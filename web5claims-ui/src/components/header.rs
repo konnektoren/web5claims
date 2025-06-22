@@ -4,27 +4,63 @@ use yew_router::prelude::*;
 
 #[function_component(Header)]
 pub fn header() -> Html {
-    let navigator = use_navigator().unwrap();
+    let navigator = use_navigator(); // Don't unwrap here
     let route = use_route::<Route>().unwrap_or(Route::Home);
 
     let go_home = {
         let navigator = navigator.clone();
-        Callback::from(move |_| navigator.push(&Route::Home))
+        Callback::from(move |_| {
+            if let Some(nav) = &navigator {
+                nav.push(&Route::Home);
+            } else {
+                // Fallback to window location change
+                if let Some(window) = web_sys::window() {
+                    let _ = window.location().set_href("/");
+                }
+            }
+        })
     };
 
     let go_to_issuer = {
         let navigator = navigator.clone();
-        Callback::from(move |_| navigator.push(&Route::Issuer))
+        Callback::from(move |_| {
+            if let Some(nav) = &navigator {
+                nav.push(&Route::Issuer);
+            } else {
+                // Fallback to window location change
+                if let Some(window) = web_sys::window() {
+                    let _ = window.location().set_href("/issuer");
+                }
+            }
+        })
     };
 
     let go_to_lookup = {
         let navigator = navigator.clone();
-        Callback::from(move |_| navigator.push(&Route::CertificateLookup))
+        Callback::from(move |_| {
+            if let Some(nav) = &navigator {
+                nav.push(&Route::CertificateLookup);
+            } else {
+                // Fallback to window location change
+                if let Some(window) = web_sys::window() {
+                    let _ = window.location().set_href("/lookup");
+                }
+            }
+        })
     };
 
     let go_to_verifier = {
         let navigator = navigator.clone();
-        Callback::from(move |_| navigator.push(&Route::Verifier))
+        Callback::from(move |_| {
+            if let Some(nav) = &navigator {
+                nav.push(&Route::Verifier);
+            } else {
+                // Fallback to window location change
+                if let Some(window) = web_sys::window() {
+                    let _ = window.location().set_href("/verifier");
+                }
+            }
+        })
     };
 
     // Feature flags - check at compile time
@@ -128,7 +164,7 @@ pub fn header() -> Html {
                                 <button
                                     class={classes!(
                                         "btn", "btn-ghost",
-                                        if matches!(route, Route::Verifier | Route::VerifyProof { .. }) { "btn-active" } else { "" }
+                                        if matches!(route, Route::Verifier | Route::VerifyProof) { "btn-active" } else { "" }
                                     )}
                                     onclick={go_to_verifier}
                                 >
