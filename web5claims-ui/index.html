@@ -31,9 +31,7 @@
         <script type="module">
             // Load ZK Passport SDK from esm.sh
             try {
-                const zkPassportModule = await import(
-                    "https://esm.sh/@zkpassport/sdk@latest"
-                );
+                const zkPassportModule = null; // await import("https://esm.sh/@zkpassport/sdk@latest");
 
                 // Make the SDK available globally
                 window.ZKPassport =
