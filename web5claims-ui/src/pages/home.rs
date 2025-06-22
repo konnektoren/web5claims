@@ -117,7 +117,7 @@ pub fn home_page() -> Html {
                         // ZK Hack Berlin Badge
                         <div class="mt-8">
                             <div class="badge badge-accent badge-lg">
-                                {"🏆 ZK Hack Berlin 2024"}
+                                {"🏆 ZK Hack Berlin 2025"}
                             </div>
                         </div>
                     </div>

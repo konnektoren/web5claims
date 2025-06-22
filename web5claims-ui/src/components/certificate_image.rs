@@ -98,7 +98,7 @@ pub fn web5_certificate_image(props: &Web5CertificateImageProps) -> Html {
                                 {"🔐 ZK-Verifiable"}
                             </span>
                             <span class="bg-gray-100 px-2 py-1 rounded">{"Powered by Aleo"}</span>
-                            <span class="bg-yellow-100 px-2 py-1 rounded">{"ZK Hack Berlin 2024"}</span>
+                            <span class="bg-yellow-100 px-2 py-1 rounded">{"ZK Hack Berlin 2025"}</span>
                         </div>
 
                         // Certificate ID (first 8 chars of base64)
