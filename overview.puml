@@ -1,0 +1,268 @@
+@startuml Language Learning Credential Flow with ZK Proofs and Identity Verification
+
+!theme aws-orange
+
+title Enhanced Language Learning Credential Flow with ZK Proofs + Identity Verification\n**Web5 Claims - ZK Hack Berlin**
+
+actor "👨‍🎓 Learner" as learner
+participant "🛂 ZKPassport\n(Identity Verifier)" as zkpass
+participant "🎮 Konnektoren\n(Language App)" as konnektoren
+participant "📱 Enhanced Credential Wallet\n(Holder)" as wallet
+participant "🔐 Web5 Claims\n(Enhanced ZK Verifier)" as web5claims
+participant "🏢 Employer/University\n(Relying Party)" as employer
+participant "⛓️ Blockchain\n(Aleo/Arbitrum)" as blockchain
+
+== 🛂 Optional Identity Verification ==
+
+learner -> zkpass: Choose Identity Verification\nfor Enhanced Trust
+activate zkpass
+
+zkpass -> learner: Request First Name:\n"Enter name as on passport"
+learner -> zkpass: Enter "John"
+
+zkpass -> zkpass: Generate ZKPassport QR Code
+note right
+**ZKPassport ZK Proof:**
+• Age ≥ 18 (without revealing exact age)
+• First name = "John" (surname hidden)
+• Passport validity verified
+• Zero-knowledge identity proof
+end note
+
+learner -> zkpass: Scan QR with ZKPassport App
+zkpass -> zkpass: Generate Identity ZK Proof
+
+zkpass -> learner: ✅ Identity Verified!\n• Age: 18+ ✅\n• Name: John ✅
+zkpass -> wallet: Store Verified Identity
+note right
+**Verified Identity Claims:**
+• first_name: "John"
+• age_verified: true (≥18)
+• verification_timestamp: 2024-01-15T09:00:00Z
+• verification_method: "zkpassport"
+• privacy_level: "zero_knowledge"
+end note
+deactivate zkpass
+
+== 📚 Enhanced Learning & Certification ==
+
+learner -> konnektoren: Complete German B2 Course\n• 95% score\n• All 4 skills (LSRW)\n• 120 hours study time
+activate konnektoren
+
+konnektoren -> konnektoren: Generate Enhanced CertificateData\n• performance_percentage: 95\n• game_path_name: "German_B2_Complete"\n• solved_challenges: 47/50\n• profile_name: "John" (from identity)\n• date: 2024-01-15
+
+konnektoren -> konnektoren: Convert to Enhanced W3C VC
+note right
+**Enhanced W3C VC Claims:**
+• language: "German"
+• cefr_level: "B2"
+• listening_score: 94, speaking_score: 96
+• reading_score: 95, writing_score: 95
+• total_hours: 120
+• learner_name: "John" (verified)
+• identity_verified: true
+• trust_level: "high"
+• issuer: "did:web:konnektoren.help"
+end note
+
+konnektoren -> wallet: Issue Enhanced W3C Verifiable Credential
+deactivate konnektoren
+
+wallet -> wallet: Store enhanced credential\n+ verified identity claims
+
+== 💼 Enhanced Job Application Scenario ==
+
+employer -> learner: Premium Job Requirement:\n"Prove German B2+ proficiency\n+ verified identity for security clearance"
+
+learner -> wallet: Request Enhanced ZK Proof
+activate wallet
+
+wallet -> web5claims: Generate Enhanced ZK Proof Request
+note right
+**Enhanced Proof Requirements:**
+• Prove: cefr_level >= "B2"
+• Prove: all_skills_passed = true
+• Prove: cert_date > 2023-01-01
+• Prove: identity_verified = true
+• Prove: age >= 18
+• Hide: exact scores, study hours
+• Hide: surname, exact age
+• Reveal: first_name if required
+end note
+
+web5claims -> blockchain: Deploy Enhanced ZK Circuit
+activate blockchain
+
+blockchain -> blockchain: Execute Enhanced Aleo Program
+note right
+**Enhanced Aleo ZK Circuit:**
+```
+transition verify_identity_language(
+  private level: u8,           // 4 = B2
+  private scores: [u8; 4],     // [94,96,95,95]
+  private age: u8,             // 25 (hidden)
+  private identity_verified: bool, // true
+  public min_level: u8,        // 4
+  public min_age: u8,          // 18
+  public requires_identity: bool,  // true
+  public min_date: u64         // 2023-01-01
+) -> (bool, u8) {
+  let skills_valid = level >= min_level
+    && scores.iter().all(|&s| s >= 70);
+  let identity_valid = identity_verified
+    && age >= min_age;
+  let trust_score = if identity_verified { 95u8 } else { 75u8 };
+
+  return (skills_valid && identity_valid, trust_score);
+}
+```
+end note
+
+blockchain -> web5claims: Enhanced ZK Proof Generated ✅
+deactivate blockchain
+
+web5claims -> wallet: Return Enhanced ZK Proof
+deactivate wallet
+
+wallet -> employer: Submit Enhanced ZK Proof
+note left
+**Enhanced Proof Contains:**
+✅ Has German B2+ certification
+✅ All skills passed minimum
+✅ Certified after Jan 2023
+✅ Identity verified (age 18+)
+✅ High trust score: 95/100
+❌ Exact scores (hidden)
+❌ Exact age (hidden)
+❌ Surname (hidden)
+❌ Personal details (hidden)
+end note
+
+== 🔍 Enhanced Verification ==
+
+employer -> web5claims: Verify Enhanced ZK Proof
+activate web5claims
+
+web5claims -> blockchain: Verify Enhanced Proof On-Chain
+activate blockchain
+
+blockchain -> blockchain: Run Enhanced Stylus Verifier
+note right
+**Enhanced Arbitrum Stylus Verifier:**
+```rust
+#[external]
+impl EnhancedLanguageVerifier {
+  pub fn verify_identity_competency_proof(
+    &self,
+    proof: Vec<u8>,
+    min_level: u8,
+    requires_identity: bool,
+    min_trust_score: u8
+  ) -> (bool, u8, bool)
+}
+```
+end note
+
+blockchain -> web5claims: Enhanced Verification Result ✅
+deactivate blockchain
+
+web5claims -> employer: ✅ Enhanced Proof Valid!\n"Candidate: German B2+ ✅\nIdentity Verified ✅\nTrust Score: 95/100 🏆"
+deactivate web5claims
+
+== 🎓 Flexible University Admission Scenario ==
+
+participant "🏫 University" as university
+
+university -> learner: Admission Requirement:\n"Prove 100+ study hours\n(identity verification optional)"
+
+learner -> wallet: Generate Standard Proof\n(No identity required)
+wallet -> web5claims: Standard ZK Proof Request
+note right
+**Standard Proof Claims:**
+• Prove: study_hours >= 100
+• Prove: cefr_level >= "B1"
+• Hide: exact level (B2)
+• Hide: identity details
+• Trust score: 75/100
+end note
+
+web5claims -> blockchain: Generate Standard Hours Proof
+blockchain -> web5claims: Proof: ">=100 hours studied"
+web5claims -> wallet: Standard Hours Proof
+wallet -> university: Submit Standard Proof
+
+university -> web5claims: Verify Hours Proof
+web5claims -> university: ✅ "Student studied 100+ hours\nTrust Score: 75/100"
+
+== 🔄 Trust Score Comparison ==
+
+note over learner, employer
+**🏆 Trust Score Benefits:**
+
+**Standard Certificate (No Identity):**
+• Language skill verified: ✅
+• Trust score: 75/100
+• Use cases: Basic verification, education
+
+**Identity-Verified Certificate:**
+• Language skill verified: ✅
+• Identity verified (age 18+): ✅
+• Trust score: 95/100
+• Use cases: Employment, security clearance, premium services
+
+**Privacy Maintained in Both:**
+• Exact scores remain hidden
+• Personal details protected
+• Zero-knowledge verification
+end note
+
+== 🏆 Enhanced Prize Tracks Integration ==
+
+note over web5claims, blockchain
+**Enhanced ZK Hack Berlin Prize Alignment:**
+🥇 **Aleo ($5K)**: Enhanced privacy-preserving education + identity credentials
+🏗️ **Arbitrum Stylus ($1K)**: Rust ZK verifier with identity support
+🔐 **ZKPassport ($1K)**: ✅ COMPLETE - Seamless identity verification integration
+👥 **Xion ($3K)**: Consumer-friendly ZK education app with trust scores
+🏆 **Main Prize ($9K)**: Innovative ZK education + identity platform
+
+**✅ ZKPassport Integration Highlights:**
+• Zero-knowledge age verification (18+)
+• First name verification without surname exposure
+• Enhanced trust scores for verified users
+• Seamless redirect flow between apps
+• Real-world employment verification benefits
+• Flexible verification levels (standard vs enhanced)
+end note
+
+== 🌟 Real-World Impact ==
+
+note over learner, university
+**🌟 Platform Benefits:**
+
+**For Learners:**
+• Higher trust scores → better opportunities
+• Privacy-preserved verification
+• Flexible identity disclosure
+• Enhanced employability
+
+**For Employers:**
+• Confident hiring decisions
+• Verified candidate claims
+• Customizable verification requirements
+• Fraud prevention
+
+**For Educational Institutions:**
+• Streamlined admissions
+• Verified learning outcomes
+• Trust-based assessment
+• Privacy-compliant verification
+
+**Technology Innovation:**
+• First ZK education + identity platform
+• Privacy-preserving trust scores
+• Blockchain-verified credentials
+• Consumer-friendly ZK experience
+end note
+
+@enduml
