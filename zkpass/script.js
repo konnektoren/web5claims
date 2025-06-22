@@ -103,8 +103,8 @@ const navigateToIssuer = () => {
   params.set("verification_type", "identity");
   params.set("verification_timestamp", new Date().toISOString());
 
-  // Navigate to main app issuer page
-  const issuerUrl = `../?page=issuer&${params.toString()}`;
+  // Navigate to main app issuer page using proper path routing
+  const issuerUrl = `../issuer?${params.toString()}`;
   console.log("Navigating to issuer:", issuerUrl);
 
   window.location.href = issuerUrl;
@@ -112,7 +112,7 @@ const navigateToIssuer = () => {
 
 // Navigate to verifier for testing
 const navigateToVerifier = () => {
-  const verifierUrl = `../?page=verifier`;
+  const verifierUrl = `../verifier`;
   console.log("Navigating to verifier:", verifierUrl);
   window.location.href = verifierUrl;
 };
