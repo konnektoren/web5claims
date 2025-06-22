@@ -1,0 +1,54 @@
+@startuml Enhanced ZK Language Learning Flow with Identity
+
+!theme cerulean-outline
+
+title Enhanced ZK Language Learning Flow with Identity Verification
+
+actor "👨‍🎓\nLearner" as learner
+participant "🛂\nZKPassport" as zkpass
+participant "🎮\nKonnektoren" as konnektoren
+participant "🔐\nWeb5 Claims" as web5claims
+participant "🏢\nEmployer" as employer
+
+== Optional Identity Verification ==
+learner -> zkpass: Verify Identity (Age 18+ + Name)
+zkpass -> zkpass: Generate ZK Identity Proof
+note right
+**ZKPassport Proof:**
+✅ Age ≥ 18 (exact age hidden)
+✅ Name: "John" (surname hidden)
+end note
+zkpass -> learner: ✅ Identity Verified
+
+== Learning & Certificate Phase ==
+learner -> konnektoren: Complete German B2 Course
+konnektoren -> konnektoren: Generate Certificate\n• Level: B2\n• Score: 95%\n• Name: John (verified)
+konnektoren -> learner: Issue Enhanced Certificate
+
+== Employment Verification ==
+learner -> employer: "I have verified German B2+ skills"
+employer -> web5claims: "Verify candidate's claim"
+
+learner -> web5claims: Submit Enhanced Certificate
+web5claims -> web5claims: Generate Enhanced ZK Proof
+note right
+**Enhanced ZK Proof:**
+✅ Level ≥ B2
+✅ Identity verified
+✅ Trust Score: 95/100
+❌ Exact score hidden (95%)
+❌ Exact age hidden
+end note
+
+web5claims -> employer: ✅ "B2+ Skills + Identity Verified"
+note left
+**Enhanced Result:**
+✅ German B2+ confirmed
+✅ Identity verified (18+)
+✅ High trust score
+❌ Private details hidden
+end note
+
+employer -> learner: ✅ "Hired with confidence!"
+
+@enduml
