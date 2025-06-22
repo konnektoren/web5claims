@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ZKPassport Age Verification - Web5 Claims</title>
+        <link rel="stylesheet" href="/styles.css" />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛂</text></svg>"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>🛂 ZKPassport Age Verification</h1>
+                <p class="subtitle">
+                    Prove you're 18+ without revealing personal information
+                </p>
+                <div class="badge">Powered by Web5 Claims</div>
+            </header>
+
+            <main>
+                <div class="verification-section">
+                    <button id="verifyBtn" class="verify-button">
+                        🔐 Verify You Are 18+
+                    </button>
+
+                    <div id="qrcode-container" class="qrcode-container hidden">
+                        <h3>Scan with ZKPassport App</h3>
+                        <canvas id="qrcodeCanvas"></canvas>
+                        <p class="qr-instructions">
+                            Use the ZKPassport mobile app to scan this QR code
+                            and complete verification
+                        </p>
+                    </div>
+
+                    <div id="status" class="status"></div>
+                </div>
+
+                <div class="info-section">
+                    <h3>How it works</h3>
+                    <div class="steps">
+                        <div class="step">
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong>Generate Request</strong>
+                                <p>
+                                    Click verify to create a ZK verification
+                                    request
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">2</span>
+                            <div>
+                                <strong>Scan QR Code</strong>
+                                <p>
+                                    Use ZKPassport app to scan the generated QR
+                                    code
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong>Generate Proof</strong>
+                                <p>
+                                    Your device creates a zero-knowledge proof
+                                    of age
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">4</span>
+                            <div>
+                                <strong>Verify</strong>
+                                <p>
+                                    Proof is verified without revealing personal
+                                    data
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <p>
+                    <a href="../" class="back-link">← Back to Web5 Claims</a>
+                    <span class="separator">|</span>
+                    <a href="https://zkpassport.id" target="_blank"
+                        >ZKPassport Documentation</a
+                    >
+                </p>
+            </footer>
+        </div>
+
+        <script type="module" src="/script.js"></script>
+    </body>
+</html>

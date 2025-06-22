@@ -24,6 +24,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: zkpass/package-lock.json
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -49,6 +56,16 @@ jobs:
           cd web5claims-ui
           trunk build --release --public-url /
 
+      - name: Install ZKPass dependencies
+        run: |
+          cd zkpass
+          npm ci
+
+      - name: Build ZKPass for GitHub Pages
+        run: |
+          cd zkpass
+          npm run build:github-pages
+
       - name: Create additional GitHub Pages files
         run: |
           cd web5claims-ui/dist
@@ -56,6 +73,9 @@ jobs:
           touch .nojekyll
           # Ensure 404.html exists for SPA routing
           cp index.html 404.html
+          # Copy ZKPass build to subfolder
+          mkdir -p zkpass
+          cp -r ../../zkpass/dist/* zkpass/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

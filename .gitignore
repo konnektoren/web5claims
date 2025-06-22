@@ -1,1 +1,4 @@
 /target
+.idea
+zkpass/node_modules
+zkpass/dist
