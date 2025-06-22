@@ -177,51 +177,37 @@ const performVerification = async (firstName) => {
     // Store expected first name for verification
     expectedFirstName = firstName;
 
-    // Build query using disclose method for both age and name
+    // Build query using gte for age and disclose for name
     let query;
     try {
-      console.log("Building combined disclosure query for age and name...");
-      // Try different combinations of age and name fields
+      console.log("Building query with age.gte(18) and name disclosure...");
+      // Try different combinations of name fields with age constraint
       try {
-        query = queryBuilder.disclose("age").disclose("firstname").done();
-        console.log("Using 'age' and 'firstname' fields for disclosure");
+        query = queryBuilder.gte("age", 18).disclose("firstname").done();
+        console.log("Using age.gte(18) and 'firstname' fields");
       } catch (combinedError) {
         console.log(
-          "age/firstname failed, trying age/firstName:",
+          "age.gte/firstname failed, trying age.gte/firstName:",
           combinedError,
         );
         try {
-          query = queryBuilder.disclose("age").disclose("firstName").done();
-          console.log("Using 'age' and 'firstName' fields for disclosure");
+          query = queryBuilder.gte("age", 18).disclose("firstName").done();
+          console.log("Using age.gte(18) and 'firstName' fields");
         } catch (combined2Error) {
           console.log(
-            "age/firstName failed, trying dateOfBirth/firstname:",
+            "age.gte/firstName failed, trying age.gte/name:",
             combined2Error,
           );
           try {
-            query = queryBuilder
-              .disclose("dateOfBirth")
-              .disclose("firstname")
-              .done();
-            console.log(
-              "Using 'dateOfBirth' and 'firstname' fields for disclosure",
-            );
+            query = queryBuilder.gte("age", 18).disclose("name").done();
+            console.log("Using age.gte(18) and 'name' fields");
           } catch (combined3Error) {
             console.log(
-              "dateOfBirth/firstname failed, trying age/name:",
+              "age.gte/name failed, trying age.gte/givenName:",
               combined3Error,
             );
-            try {
-              query = queryBuilder.disclose("age").disclose("name").done();
-              console.log("Using 'age' and 'name' fields for disclosure");
-            } catch (combined4Error) {
-              console.log(
-                "age/name failed, trying age/givenName:",
-                combined4Error,
-              );
-              query = queryBuilder.disclose("age").disclose("givenName").done();
-              console.log("Using 'age' and 'givenName' fields for disclosure");
-            }
+            query = queryBuilder.gte("age", 18).disclose("givenName").done();
+            console.log("Using age.gte(18) and 'givenName' fields");
           }
         }
       }
@@ -347,14 +333,18 @@ const handleVerificationResult = (verified, result, firstName) => {
     return;
   }
 
-  // Extract age data from the nested structure
-  let ageData = null;
-  if (result.age?.disclose?.result) {
-    ageData = result.age.disclose.result;
-  } else if (result.dateOfBirth?.disclose?.result) {
-    ageData = result.dateOfBirth.disclose.result;
-  } else if (result.birthDate?.disclose?.result) {
-    ageData = result.birthDate.disclose.result;
+  // Check if age constraint was satisfied (age >= 18)
+  // With .gte("age", 18), we don't get the actual age, just whether the constraint was met
+  let ageVerified = false;
+  if (result.age?.gte?.result === true) {
+    ageVerified = true;
+    console.log("Age verification: 18+ constraint satisfied");
+  } else if (result.age?.gte?.result === false) {
+    ageVerified = false;
+    console.log("Age verification: 18+ constraint NOT satisfied");
+  } else {
+    // Fallback: check if there's any age-related data
+    console.log("No age constraint result found in response");
   }
 
   // Extract name data from the nested structure
@@ -371,42 +361,7 @@ const handleVerificationResult = (verified, result, firstName) => {
     nameData = result.name.disclose.result;
   }
 
-  let ageVerified = false;
   let nameVerified = false;
-  let userAge;
-
-  // Age verification
-  if (ageData !== null) {
-    if (typeof ageData === "number") {
-      userAge = ageData;
-    } else if (typeof ageData === "string") {
-      if (ageData.includes("-") || ageData.includes("/")) {
-        // Handle date of birth
-        const birthDate = new Date(ageData);
-        const today = new Date();
-        userAge = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (
-          monthDiff < 0 ||
-          (monthDiff === 0 && today.getDate() < birthDate.getDate())
-        ) {
-          userAge--;
-        }
-      } else {
-        userAge = parseInt(ageData);
-      }
-    }
-
-    if (!isNaN(userAge) && userAge >= 18) {
-      ageVerified = true;
-    }
-
-    resultData.age = userAge;
-    resultData.ageVerified = ageVerified;
-    console.log("Age verification:", { ageData, userAge, ageVerified });
-  } else {
-    console.log("No age data found in result");
-  }
 
   // Name verification
   if (nameData && expectedFirstName) {
@@ -437,20 +392,19 @@ const handleVerificationResult = (verified, result, firstName) => {
     console.log("No name data found or expected name not set");
   }
 
+  resultData.ageVerified = ageVerified;
   success = ageVerified && nameVerified;
 
   if (success) {
-    message = `🎉 Complete verification successful! Age (${userAge}) and name "${expectedFirstName}" verified without revealing other personal information.`;
+    message = `🎉 Complete verification successful! Age (18+) and name "${expectedFirstName}" verified without revealing other personal information.`;
   } else if (ageVerified && !nameVerified) {
-    message = `❌ Partial verification: Age (${userAge}) verified but name "${expectedFirstName}" does not match your passport.`;
+    message = `❌ Partial verification: Age (18+) verified but name "${expectedFirstName}" does not match your passport.`;
   } else if (!ageVerified && nameVerified) {
-    message = `❌ Partial verification: Name verified but you must be 18+ to proceed. (Age: ${userAge || "unknown"})`;
+    message = `❌ Partial verification: Name verified but you must be 18+ to proceed.`;
   } else {
     message = `❌ Verification failed: Neither age nor name "${expectedFirstName}" could be verified.`;
-    if (ageData === null) message += " (No age data found)";
+    if (result.age?.gte?.result === false) message += " (Under 18)";
     if (nameData === null) message += " (No name data found)";
-    if (userAge !== undefined && userAge < 18)
-      message += ` (Age ${userAge} is under 18)`;
   }
 
   if (success || (isDevMode && (ageVerified || nameVerified))) {
@@ -474,6 +428,31 @@ const handleVerificationResult = (verified, result, firstName) => {
     setTimeout(() => {
       resetUI();
     }, 5000);
+  }
+};
+
+// Update success actions based on verification result
+const updateSuccessActions = (data) => {
+  const successTitle = document.getElementById("success-title");
+  const successSummary = document.getElementById("success-summary");
+  const issuerBtn = document.getElementById("issuer-btn");
+
+  if (successTitle) {
+    successTitle.textContent = `🎉 Identity Verified!`;
+  }
+
+  if (successSummary) {
+    let summary = "You have successfully verified:\n";
+    if (data.ageVerified) summary += "• Age: 18+ ✅\n";
+    if (data.nameVerified && data.firstName)
+      summary += `• Name: ${data.firstName} ✅\n`;
+    summary +=
+      "\nYou can now proceed to issue a language certificate with your verified identity.";
+    successSummary.textContent = summary;
+  }
+
+  if (issuerBtn && data.firstName) {
+    issuerBtn.textContent = `📜 Issue Certificate for ${data.firstName}`;
   }
 };
 
